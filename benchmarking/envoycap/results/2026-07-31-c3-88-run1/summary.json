@@ -1,0 +1,1230 @@
+{
+  "run": {
+    "cluster": "substrate-envoycap",
+    "git_sha": "17f6ed9d",
+    "image": "gcr.io/chuangw-gke-dev/ate-images/envoycap-93cf5eb9050d55f3aa2cd3f982165e0e@sha256:5719ca07846d5e28bc693bd876ff564002a32ede634d9f25ac27d2a48370026d",
+    "started_at": "2026-07-31T05:06:59Z",
+    "finished_at": "2026-07-31T05:16:42Z",
+    "flags": {
+      "actors": 40,
+      "start_qps": 1000,
+      "max_qps": 8000,
+      "steps": 8,
+      "step_duration": "30s",
+      "repeat": 2
+    },
+    "atespace": "benchmark",
+    "router_url": "http://atenet-router.ate-system.svc.cluster.local",
+    "router_pod_ip": "10.104.11.42",
+    "router_node": "gke-substrate-envoyc-substrate-node-p-8b17fe68-g0km",
+    "loadgen_node": "gke-substrate-envoycap-loadgen-343681dd-w160",
+    "gomaxprocs": 88,
+    "warmup_s": 8,
+    "worker_goroutines": 20000,
+    "actors": [
+      {
+        "name": "envoycap-ddd65c75-0000",
+        "pod_ip": "10.104.0.72"
+      },
+      {
+        "name": "envoycap-ddd65c75-0001",
+        "pod_ip": "10.104.0.85"
+      },
+      {
+        "name": "envoycap-ddd65c75-0002",
+        "pod_ip": "10.104.0.69"
+      },
+      {
+        "name": "envoycap-ddd65c75-0003",
+        "pod_ip": "10.104.0.86"
+      },
+      {
+        "name": "envoycap-ddd65c75-0004",
+        "pod_ip": "10.104.0.90"
+      },
+      {
+        "name": "envoycap-ddd65c75-0005",
+        "pod_ip": "10.104.0.63"
+      },
+      {
+        "name": "envoycap-ddd65c75-0006",
+        "pod_ip": "10.104.0.67"
+      },
+      {
+        "name": "envoycap-ddd65c75-0007",
+        "pod_ip": "10.104.0.94"
+      },
+      {
+        "name": "envoycap-ddd65c75-0008",
+        "pod_ip": "10.104.0.96"
+      },
+      {
+        "name": "envoycap-ddd65c75-0009",
+        "pod_ip": "10.104.0.71"
+      },
+      {
+        "name": "envoycap-ddd65c75-0010",
+        "pod_ip": "10.104.0.65"
+      },
+      {
+        "name": "envoycap-ddd65c75-0011",
+        "pod_ip": "10.104.0.98"
+      },
+      {
+        "name": "envoycap-ddd65c75-0012",
+        "pod_ip": "10.104.0.70"
+      },
+      {
+        "name": "envoycap-ddd65c75-0013",
+        "pod_ip": "10.104.0.61"
+      },
+      {
+        "name": "envoycap-ddd65c75-0014",
+        "pod_ip": "10.104.0.77"
+      },
+      {
+        "name": "envoycap-ddd65c75-0015",
+        "pod_ip": "10.104.0.99"
+      },
+      {
+        "name": "envoycap-ddd65c75-0016",
+        "pod_ip": "10.104.0.83"
+      },
+      {
+        "name": "envoycap-ddd65c75-0017",
+        "pod_ip": "10.104.0.62"
+      },
+      {
+        "name": "envoycap-ddd65c75-0018",
+        "pod_ip": "10.104.0.74"
+      },
+      {
+        "name": "envoycap-ddd65c75-0019",
+        "pod_ip": "10.104.0.75"
+      },
+      {
+        "name": "envoycap-ddd65c75-0020",
+        "pod_ip": "10.104.0.100"
+      },
+      {
+        "name": "envoycap-ddd65c75-0021",
+        "pod_ip": "10.104.0.91"
+      },
+      {
+        "name": "envoycap-ddd65c75-0022",
+        "pod_ip": "10.104.0.81"
+      },
+      {
+        "name": "envoycap-ddd65c75-0023",
+        "pod_ip": "10.104.0.95"
+      },
+      {
+        "name": "envoycap-ddd65c75-0024",
+        "pod_ip": "10.104.0.84"
+      },
+      {
+        "name": "envoycap-ddd65c75-0025",
+        "pod_ip": "10.104.0.78"
+      },
+      {
+        "name": "envoycap-ddd65c75-0026",
+        "pod_ip": "10.104.0.88"
+      },
+      {
+        "name": "envoycap-ddd65c75-0027",
+        "pod_ip": "10.104.0.92"
+      },
+      {
+        "name": "envoycap-ddd65c75-0028",
+        "pod_ip": "10.104.0.87"
+      },
+      {
+        "name": "envoycap-ddd65c75-0029",
+        "pod_ip": "10.104.0.97"
+      },
+      {
+        "name": "envoycap-ddd65c75-0030",
+        "pod_ip": "10.104.0.76"
+      },
+      {
+        "name": "envoycap-ddd65c75-0031",
+        "pod_ip": "10.104.0.80"
+      },
+      {
+        "name": "envoycap-ddd65c75-0032",
+        "pod_ip": "10.104.0.68"
+      },
+      {
+        "name": "envoycap-ddd65c75-0033",
+        "pod_ip": "10.104.0.66"
+      },
+      {
+        "name": "envoycap-ddd65c75-0034",
+        "pod_ip": "10.104.0.64"
+      },
+      {
+        "name": "envoycap-ddd65c75-0035",
+        "pod_ip": "10.104.0.79"
+      },
+      {
+        "name": "envoycap-ddd65c75-0036",
+        "pod_ip": "10.104.0.82"
+      },
+      {
+        "name": "envoycap-ddd65c75-0037",
+        "pod_ip": "10.104.0.93"
+      },
+      {
+        "name": "envoycap-ddd65c75-0038",
+        "pod_ip": "10.104.0.73"
+      },
+      {
+        "name": "envoycap-ddd65c75-0039",
+        "pod_ip": "10.104.0.89"
+      }
+    ],
+    "distinct_worker_ips": 40,
+    "caveats": [
+      "envoy --component-log-level upstream:debug,router:debug,ext_proc:debug (as shipped)",
+      "envoy StdoutAccessLog enabled: one access-log line per request (as shipped)",
+      "OTLP tracing at 100% RandomSampling (as shipped)",
+      "dynamic_forward_proxy_cluster max_requests_per_connection: 1, so Envoy opens a fresh TCP connection to the worker pod per request (as shipped)",
+      "ate-cluster (the ext_proc callout) has no circuit_breakers block, so it runs Envoy's default max_requests: 1024 — at most 1024 concurrent callouts (as shipped)",
+      "no CPU requests on either atenet-router container (as shipped)"
+    ],
+    "envoy_concurrency": 88,
+    "aborted": false
+  },
+  "steps": [
+    {
+      "repeat": 1,
+      "step": 1,
+      "offered_qps": 1000,
+      "achieved_qps": 999.8996978797064,
+      "warmup_s": 8,
+      "measured_s": 22,
+      "count": 22000,
+      "ok": 22000,
+      "fail": 0,
+      "fail_by_class": {},
+      "p50_ms": 3.229009,
+      "p95_ms": 3.979372,
+      "p99_ms": 4.858461,
+      "max_ms": 21.034643,
+      "dispatch_lag_p99_ms": 0.896679,
+      "loadgen_cores_used": 0.7859300263749229,
+      "gomaxprocs": 88,
+      "per_worker_ip_rps": 25,
+      "singleflight_collapse_estimate": 0.020372552807980848,
+      "envoy": {
+        "counters": {
+          "upstream_cx_connect_fail": 0,
+          "upstream_cx_connect_timeout": 0,
+          "upstream_cx_overflow": 0,
+          "upstream_cx_total": 22000,
+          "upstream_rq_pending_overflow": 0,
+          "upstream_rq_timeout": 0,
+          "upstream_rq_total": 22000
+        },
+        "downstream_rq_time_p50_ms": 3.00340009122196,
+        "downstream_rq_time_p95_ms": 4.806460173321723,
+        "downstream_rq_time_p99_ms": 4.96673218061948,
+        "upstream_rq_per_cx": 1
+      },
+      "envoy_extproc": {
+        "counters": {
+          "upstream_cx_connect_fail": 0,
+          "upstream_rq_pending_overflow": 0,
+          "upstream_rq_timeout": 0,
+          "upstream_rq_total": 21999
+        },
+        "peak_gauges": {
+          "circuit_breakers_default_cx_open": 0,
+          "circuit_breakers_default_rq_open": 0,
+          "upstream_cx_active": 34,
+          "upstream_rq_active": 4
+        },
+        "gauge_samples": 21,
+        "max_requests": 1024,
+        "active_fraction": 0.00390625
+      },
+      "route_duration_p50_ms": 0.5246683843878233,
+      "route_duration_p95_ms": 0.9968699303368641,
+      "router_sidecar_cpu_cores": 0.5668722008745316,
+      "envoy_watchdog": {
+        "main_thread_watchdog_mega_miss": 0,
+        "main_thread_watchdog_miss": 0,
+        "worker_watchdog_mega_miss": 0,
+        "worker_watchdog_miss": 0
+      },
+      "rig_limited": false,
+      "rig_notes": null
+    },
+    {
+      "repeat": 1,
+      "step": 2,
+      "offered_qps": 2000,
+      "achieved_qps": 1999.4058968044696,
+      "warmup_s": 8,
+      "measured_s": 22,
+      "count": 44000,
+      "ok": 44000,
+      "fail": 0,
+      "fail_by_class": {},
+      "p50_ms": 3.336036,
+      "p95_ms": 4.242951,
+      "p99_ms": 5.803333,
+      "max_ms": 34.457433,
+      "dispatch_lag_p99_ms": 0.890768,
+      "loadgen_cores_used": 1.0651919408576052,
+      "gomaxprocs": 88,
+      "per_worker_ip_rps": 50,
+      "singleflight_collapse_estimate": 0.04084922442348923,
+      "envoy": {
+        "counters": {
+          "upstream_cx_connect_fail": 0,
+          "upstream_cx_connect_timeout": 0,
+          "upstream_cx_overflow": 0,
+          "upstream_cx_total": 43999,
+          "upstream_rq_pending_overflow": 0,
+          "upstream_rq_timeout": 0,
+          "upstream_rq_total": 44000
+        },
+        "downstream_rq_time_p50_ms": 3.0135847566393523,
+        "downstream_rq_time_p95_ms": 4.825811037614769,
+        "downstream_rq_time_p99_ms": 4.986897818145918,
+        "upstream_rq_per_cx": 1.000022727789268
+      },
+      "envoy_extproc": {
+        "counters": {
+          "upstream_cx_connect_fail": 0,
+          "upstream_rq_pending_overflow": 0,
+          "upstream_rq_timeout": 0,
+          "upstream_rq_total": 43996
+        },
+        "peak_gauges": {
+          "circuit_breakers_default_cx_open": 0,
+          "circuit_breakers_default_rq_open": 0,
+          "upstream_cx_active": 48,
+          "upstream_rq_active": 7
+        },
+        "gauge_samples": 21,
+        "max_requests": 1024,
+        "active_fraction": 0.0068359375
+      },
+      "route_duration_p50_ms": 0.5432280216387125,
+      "route_duration_p95_ms": 1.5675610820244321,
+      "router_sidecar_cpu_cores": 1.0732839619314825,
+      "envoy_watchdog": {
+        "main_thread_watchdog_mega_miss": 0,
+        "main_thread_watchdog_miss": 0,
+        "worker_watchdog_mega_miss": 0,
+        "worker_watchdog_miss": 0
+      },
+      "rig_limited": false,
+      "rig_notes": null
+    },
+    {
+      "repeat": 1,
+      "step": 3,
+      "offered_qps": 3000,
+      "achieved_qps": 2999.4443187190245,
+      "warmup_s": 8,
+      "measured_s": 22,
+      "count": 66000,
+      "ok": 66000,
+      "fail": 0,
+      "fail_by_class": {},
+      "p50_ms": 3.463025,
+      "p95_ms": 4.660809,
+      "p99_ms": 5.575647,
+      "max_ms": 36.076184,
+      "dispatch_lag_p99_ms": 0.803317,
+      "loadgen_cores_used": 1.5617337980170032,
+      "gomaxprocs": 88,
+      "per_worker_ip_rps": 75,
+      "singleflight_collapse_estimate": 0.0599650194183026,
+      "envoy": {
+        "counters": {
+          "upstream_cx_connect_fail": 0,
+          "upstream_cx_connect_timeout": 0,
+          "upstream_cx_overflow": 0,
+          "upstream_cx_total": 65999,
+          "upstream_rq_pending_overflow": 0,
+          "upstream_rq_timeout": 0,
+          "upstream_rq_total": 66001
+        },
+        "downstream_rq_time_p50_ms": 3.018926734011792,
+        "downstream_rq_time_p95_ms": 4.8359607946224035,
+        "downstream_rq_time_p99_ms": 4.997474933343347,
+        "upstream_rq_per_cx": 1.0000303034894469
+      },
+      "envoy_extproc": {
+        "counters": {
+          "upstream_cx_connect_fail": 0,
+          "upstream_rq_pending_overflow": 0,
+          "upstream_rq_timeout": 0,
+          "upstream_rq_total": 65995
+        },
+        "peak_gauges": {
+          "circuit_breakers_default_cx_open": 0,
+          "circuit_breakers_default_rq_open": 0,
+          "upstream_cx_active": 87,
+          "upstream_rq_active": 12
+        },
+        "gauge_samples": 21,
+        "max_requests": 1024,
+        "active_fraction": 0.01171875
+      },
+      "route_duration_p50_ms": 0.547380035839915,
+      "route_duration_p95_ms": 1.6468934382263531,
+      "router_sidecar_cpu_cores": 1.5042242190552992,
+      "envoy_watchdog": {
+        "main_thread_watchdog_mega_miss": 0,
+        "main_thread_watchdog_miss": 0,
+        "worker_watchdog_mega_miss": 0,
+        "worker_watchdog_miss": 0
+      },
+      "rig_limited": false,
+      "rig_notes": null
+    },
+    {
+      "repeat": 1,
+      "step": 4,
+      "offered_qps": 4000,
+      "achieved_qps": 3999.2581670590935,
+      "warmup_s": 8,
+      "measured_s": 22,
+      "count": 88000,
+      "ok": 88000,
+      "fail": 0,
+      "fail_by_class": {},
+      "p50_ms": 3.520574,
+      "p95_ms": 4.751926,
+      "p99_ms": 5.812376,
+      "max_ms": 14.129923,
+      "dispatch_lag_p99_ms": 0.778584,
+      "loadgen_cores_used": 1.908571135002353,
+      "gomaxprocs": 88,
+      "per_worker_ip_rps": 100,
+      "singleflight_collapse_estimate": 0.08140514148565449,
+      "envoy": {
+        "counters": {
+          "upstream_cx_connect_fail": 0,
+          "upstream_cx_connect_timeout": 0,
+          "upstream_cx_overflow": 0,
+          "upstream_cx_total": 88000,
+          "upstream_rq_pending_overflow": 0,
+          "upstream_rq_timeout": 0,
+          "upstream_rq_total": 88002
+        },
+        "downstream_rq_time_p50_ms": 3.004554186182038,
+        "downstream_rq_time_p95_ms": 4.808652953745872,
+        "downstream_rq_time_p99_ms": 4.969017288640435,
+        "upstream_rq_per_cx": 1.0000227272727273
+      },
+      "envoy_extproc": {
+        "counters": {
+          "upstream_cx_connect_fail": 0,
+          "upstream_rq_pending_overflow": 0,
+          "upstream_rq_timeout": 0,
+          "upstream_rq_total": 87993
+        },
+        "peak_gauges": {
+          "circuit_breakers_default_cx_open": 0,
+          "circuit_breakers_default_rq_open": 0,
+          "upstream_cx_active": 87,
+          "upstream_rq_active": 17
+        },
+        "gauge_samples": 21,
+        "max_requests": 1024,
+        "active_fraction": 0.0166015625
+      },
+      "route_duration_p50_ms": 0.5759395050412466,
+      "route_duration_p95_ms": 1.939855986773408,
+      "router_sidecar_cpu_cores": 1.9885002162849588,
+      "envoy_watchdog": {
+        "main_thread_watchdog_mega_miss": 0,
+        "main_thread_watchdog_miss": 0,
+        "worker_watchdog_mega_miss": 0,
+        "worker_watchdog_miss": 0
+      },
+      "rig_limited": false,
+      "rig_notes": null
+    },
+    {
+      "repeat": 1,
+      "step": 5,
+      "offered_qps": 5000,
+      "achieved_qps": 4998.857731696824,
+      "warmup_s": 8,
+      "measured_s": 22,
+      "count": 110000,
+      "ok": 110000,
+      "fail": 0,
+      "fail_by_class": {},
+      "p50_ms": 3.731477,
+      "p95_ms": 80.366371,
+      "p99_ms": 258.709879,
+      "max_ms": 587.154105,
+      "dispatch_lag_p99_ms": 0.845803,
+      "loadgen_cores_used": 2.365922715132646,
+      "gomaxprocs": 88,
+      "per_worker_ip_rps": 125,
+      "singleflight_collapse_estimate": 0.1735908561960284,
+      "envoy": {
+        "counters": {
+          "upstream_cx_connect_fail": 0,
+          "upstream_cx_connect_timeout": 0,
+          "upstream_cx_overflow": 0,
+          "upstream_cx_total": 110003,
+          "upstream_rq_pending_overflow": 0,
+          "upstream_rq_timeout": 0,
+          "upstream_rq_total": 110004
+        },
+        "downstream_rq_time_p50_ms": 3.206301824212272,
+        "downstream_rq_time_p95_ms": 42.6782820097244,
+        "downstream_rq_time_p99_ms": 193.20497547302057,
+        "upstream_rq_per_cx": 1.0000090906611638
+      },
+      "envoy_extproc": {
+        "counters": {
+          "upstream_cx_connect_fail": 0,
+          "upstream_rq_pending_overflow": 0,
+          "upstream_rq_timeout": 0,
+          "upstream_rq_total": 109992
+        },
+        "peak_gauges": {
+          "circuit_breakers_default_cx_open": 0,
+          "circuit_breakers_default_rq_open": 0,
+          "upstream_cx_active": 88,
+          "upstream_rq_active": 643
+        },
+        "gauge_samples": 21,
+        "max_requests": 1024,
+        "active_fraction": 0.6279296875
+      },
+      "route_duration_p50_ms": 0.6716116187032785,
+      "route_duration_p95_ms": 2.2648201693840235,
+      "router_sidecar_cpu_cores": 2.4332097979285545,
+      "envoy_watchdog": {
+        "main_thread_watchdog_mega_miss": 0,
+        "main_thread_watchdog_miss": 0,
+        "worker_watchdog_mega_miss": 0,
+        "worker_watchdog_miss": 0
+      },
+      "rig_limited": false,
+      "rig_notes": null
+    },
+    {
+      "repeat": 1,
+      "step": 6,
+      "offered_qps": 6000,
+      "achieved_qps": 5998.3255148108665,
+      "warmup_s": 8,
+      "measured_s": 22,
+      "count": 132000,
+      "ok": 132000,
+      "fail": 0,
+      "fail_by_class": {},
+      "p50_ms": 3.977849,
+      "p95_ms": 10.316325,
+      "p99_ms": 13.793364,
+      "max_ms": 89.699905,
+      "dispatch_lag_p99_ms": 0.056463,
+      "loadgen_cores_used": 3.6019722586030287,
+      "gomaxprocs": 88,
+      "per_worker_ip_rps": 150,
+      "singleflight_collapse_estimate": 0.13225229903245264,
+      "envoy": {
+        "counters": {
+          "upstream_cx_connect_fail": 0,
+          "upstream_cx_connect_timeout": 0,
+          "upstream_cx_overflow": 0,
+          "upstream_cx_total": 132003,
+          "upstream_rq_pending_overflow": 0,
+          "upstream_rq_timeout": 0,
+          "upstream_rq_total": 132005
+        },
+        "downstream_rq_time_p50_ms": 3.2933882777144117,
+        "downstream_rq_time_p95_ms": 8.159243456995682,
+        "downstream_rq_time_p99_ms": 9.780867891149386,
+        "upstream_rq_per_cx": 1.0000151511708066
+      },
+      "envoy_extproc": {
+        "counters": {
+          "upstream_cx_connect_fail": 0,
+          "upstream_rq_pending_overflow": 0,
+          "upstream_rq_timeout": 0,
+          "upstream_rq_total": 131992
+        },
+        "peak_gauges": {
+          "circuit_breakers_default_cx_open": 0,
+          "circuit_breakers_default_rq_open": 0,
+          "upstream_cx_active": 88,
+          "upstream_rq_active": 43
+        },
+        "gauge_samples": 21,
+        "max_requests": 1024,
+        "active_fraction": 0.0419921875
+      },
+      "route_duration_p50_ms": 0.7400940115326796,
+      "route_duration_p95_ms": 2.2855096219849926,
+      "router_sidecar_cpu_cores": 2.8315154423746187,
+      "envoy_watchdog": {
+        "main_thread_watchdog_mega_miss": 0,
+        "main_thread_watchdog_miss": 0,
+        "worker_watchdog_mega_miss": 0,
+        "worker_watchdog_miss": 0
+      },
+      "rig_limited": false,
+      "rig_notes": null
+    },
+    {
+      "repeat": 1,
+      "step": 7,
+      "offered_qps": 7000,
+      "achieved_qps": 6998.8520689620755,
+      "warmup_s": 8,
+      "measured_s": 22,
+      "count": 154000,
+      "ok": 154000,
+      "fail": 0,
+      "fail_by_class": {},
+      "p50_ms": 4.179883,
+      "p95_ms": 7.001068,
+      "p99_ms": 21.854804,
+      "max_ms": 162.216753,
+      "dispatch_lag_p99_ms": 0.232911,
+      "loadgen_cores_used": 3.96750885383805,
+      "gomaxprocs": 88,
+      "per_worker_ip_rps": 175,
+      "singleflight_collapse_estimate": 0.17216846951127518,
+      "envoy": {
+        "counters": {
+          "upstream_cx_connect_fail": 0,
+          "upstream_cx_connect_timeout": 0,
+          "upstream_cx_overflow": 0,
+          "upstream_cx_total": 154391,
+          "upstream_rq_pending_overflow": 0,
+          "upstream_rq_timeout": 0,
+          "upstream_rq_total": 154391
+        },
+        "downstream_rq_time_p50_ms": 3.149864860241541,
+        "downstream_rq_time_p95_ms": 7.030295081967202,
+        "downstream_rq_time_p99_ms": 39.52090395480249,
+        "upstream_rq_per_cx": 1
+      },
+      "envoy_extproc": {
+        "counters": {
+          "upstream_cx_connect_fail": 0,
+          "upstream_rq_pending_overflow": 0,
+          "upstream_rq_timeout": 0,
+          "upstream_rq_total": 153989
+        },
+        "peak_gauges": {
+          "circuit_breakers_default_cx_open": 0,
+          "circuit_breakers_default_rq_open": 0,
+          "upstream_cx_active": 88,
+          "upstream_rq_active": 29
+        },
+        "gauge_samples": 21,
+        "max_requests": 1024,
+        "active_fraction": 0.0283203125
+      },
+      "route_duration_p50_ms": 0.8505922538703101,
+      "route_duration_p95_ms": 2.3425318127250896,
+      "router_sidecar_cpu_cores": 3.3621508538442395,
+      "envoy_watchdog": {
+        "main_thread_watchdog_mega_miss": 0,
+        "main_thread_watchdog_miss": 0,
+        "worker_watchdog_mega_miss": 0,
+        "worker_watchdog_miss": 0
+      },
+      "rig_limited": false,
+      "rig_notes": null
+    },
+    {
+      "repeat": 1,
+      "step": 8,
+      "offered_qps": 8000,
+      "achieved_qps": 7988.264542229832,
+      "warmup_s": 8,
+      "measured_s": 22,
+      "count": 176000,
+      "ok": 175891,
+      "fail": 109,
+      "fail_by_class": {
+        "http_500": 109
+      },
+      "p50_ms": 5.642202,
+      "p95_ms": 190.795731,
+      "p99_ms": 355.964884,
+      "max_ms": 644.712864,
+      "dispatch_lag_p99_ms": 0.359685,
+      "loadgen_cores_used": 4.700912876327477,
+      "gomaxprocs": 88,
+      "per_worker_ip_rps": 200,
+      "singleflight_collapse_estimate": 0.22955750251510956,
+      "envoy": {
+        "counters": {
+          "upstream_cx_connect_fail": 0,
+          "upstream_cx_connect_timeout": 0,
+          "upstream_cx_overflow": 0,
+          "upstream_cx_total": 176558,
+          "upstream_rq_pending_overflow": 0,
+          "upstream_rq_timeout": 0,
+          "upstream_rq_total": 176899
+        },
+        "downstream_rq_time_p50_ms": 4.482240099576252,
+        "downstream_rq_time_p95_ms": 192.2976570820022,
+        "downstream_rq_time_p99_ms": 343.0567612687819,
+        "upstream_rq_per_cx": 1.0019313766580953
+      },
+      "envoy_extproc": {
+        "counters": {
+          "upstream_cx_connect_fail": 0,
+          "upstream_rq_pending_overflow": 155,
+          "upstream_rq_timeout": 0,
+          "upstream_rq_total": 176134
+        },
+        "peak_gauges": {
+          "circuit_breakers_default_cx_open": 0,
+          "circuit_breakers_default_rq_open": 0,
+          "upstream_cx_active": 88,
+          "upstream_rq_active": 946
+        },
+        "gauge_samples": 21,
+        "max_requests": 1024,
+        "active_fraction": 0.923828125
+      },
+      "route_duration_p50_ms": 0.980967335983874,
+      "route_duration_p95_ms": 2.3949489257625167,
+      "router_sidecar_cpu_cores": 3.574119428763282,
+      "envoy_watchdog": {
+        "main_thread_watchdog_mega_miss": 0,
+        "main_thread_watchdog_miss": 0,
+        "worker_watchdog_mega_miss": 0,
+        "worker_watchdog_miss": 0
+      },
+      "rig_limited": false,
+      "rig_notes": null,
+      "constraint_notes": [
+        "ext_proc cluster \"ate-cluster\" rejected 155 callouts this step (upstream_rq_pending_overflow): Envoy's default max_requests: 1024 is binding, and it is a configuration limit rather than exhausted CPU",
+        "peak ext_proc concurrency 946 of max_requests 1024 (92%) during this step: approaching the callout cap"
+      ]
+    },
+    {
+      "repeat": 2,
+      "step": 1,
+      "offered_qps": 1000,
+      "achieved_qps": 999.8361442621938,
+      "warmup_s": 8,
+      "measured_s": 22,
+      "count": 22000,
+      "ok": 22000,
+      "fail": 0,
+      "fail_by_class": {},
+      "p50_ms": 3.29635,
+      "p95_ms": 4.338615,
+      "p99_ms": 5.092112,
+      "max_ms": 12.231846,
+      "dispatch_lag_p99_ms": 0.900717,
+      "loadgen_cores_used": 0.671632050085439,
+      "gomaxprocs": 88,
+      "per_worker_ip_rps": 25,
+      "singleflight_collapse_estimate": 0.017918494453338693,
+      "envoy": {
+        "counters": {
+          "upstream_cx_connect_fail": 0,
+          "upstream_cx_connect_timeout": 0,
+          "upstream_cx_overflow": 0,
+          "upstream_cx_total": 22000,
+          "upstream_rq_pending_overflow": 0,
+          "upstream_rq_timeout": 0,
+          "upstream_rq_total": 22000
+        },
+        "downstream_rq_time_p50_ms": 3.0011200448017923,
+        "downstream_rq_time_p95_ms": 4.802128085123405,
+        "downstream_rq_time_p99_ms": 4.962217688707549,
+        "upstream_rq_per_cx": 1
+      },
+      "envoy_extproc": {
+        "counters": {
+          "upstream_cx_connect_fail": 0,
+          "upstream_rq_pending_overflow": 0,
+          "upstream_rq_timeout": 0,
+          "upstream_rq_total": 21998
+        },
+        "peak_gauges": {
+          "circuit_breakers_default_cx_open": 0,
+          "circuit_breakers_default_rq_open": 0,
+          "upstream_cx_active": 88,
+          "upstream_rq_active": 4
+        },
+        "gauge_samples": 21,
+        "max_requests": 1024,
+        "active_fraction": 0.00390625
+      },
+      "route_duration_p50_ms": 0.5096403411197628,
+      "route_duration_p95_ms": 0.968316648127549,
+      "router_sidecar_cpu_cores": 0.5108479332701,
+      "envoy_watchdog": {
+        "main_thread_watchdog_mega_miss": 0,
+        "main_thread_watchdog_miss": 0,
+        "worker_watchdog_mega_miss": 0,
+        "worker_watchdog_miss": 0
+      },
+      "rig_limited": false,
+      "rig_notes": null
+    },
+    {
+      "repeat": 2,
+      "step": 2,
+      "offered_qps": 2000,
+      "achieved_qps": 1998.4660316143943,
+      "warmup_s": 8,
+      "measured_s": 22,
+      "count": 44000,
+      "ok": 44000,
+      "fail": 0,
+      "fail_by_class": {},
+      "p50_ms": 3.665368,
+      "p95_ms": 5.090978,
+      "p99_ms": 6.104886,
+      "max_ms": 17.386604,
+      "dispatch_lag_p99_ms": 0.889645,
+      "loadgen_cores_used": 1.119472806114167,
+      "gomaxprocs": 88,
+      "per_worker_ip_rps": 50,
+      "singleflight_collapse_estimate": 0.037225066981455564,
+      "envoy": {
+        "counters": {
+          "upstream_cx_connect_fail": 0,
+          "upstream_cx_connect_timeout": 0,
+          "upstream_cx_overflow": 0,
+          "upstream_cx_total": 43999,
+          "upstream_rq_pending_overflow": 0,
+          "upstream_rq_timeout": 0,
+          "upstream_rq_total": 44000
+        },
+        "downstream_rq_time_p50_ms": 3.0030426349218424,
+        "downstream_rq_time_p95_ms": 4.8057810063515,
+        "downstream_rq_time_p99_ms": 4.966024417145247,
+        "upstream_rq_per_cx": 1.000022727789268
+      },
+      "envoy_extproc": {
+        "counters": {
+          "upstream_cx_connect_fail": 0,
+          "upstream_rq_pending_overflow": 0,
+          "upstream_rq_timeout": 0,
+          "upstream_rq_total": 43998
+        },
+        "peak_gauges": {
+          "circuit_breakers_default_cx_open": 0,
+          "circuit_breakers_default_rq_open": 0,
+          "upstream_cx_active": 88,
+          "upstream_rq_active": 8
+        },
+        "gauge_samples": 21,
+        "max_requests": 1024,
+        "active_fraction": 0.0078125
+      },
+      "route_duration_p50_ms": 0.5197452379827008,
+      "route_duration_p95_ms": 0.9875159521671314,
+      "router_sidecar_cpu_cores": 0.9563170840258053,
+      "envoy_watchdog": {
+        "main_thread_watchdog_mega_miss": 0,
+        "main_thread_watchdog_miss": 0,
+        "worker_watchdog_mega_miss": 0,
+        "worker_watchdog_miss": 0
+      },
+      "rig_limited": false,
+      "rig_notes": null
+    },
+    {
+      "repeat": 2,
+      "step": 3,
+      "offered_qps": 3000,
+      "achieved_qps": 2999.2948528285992,
+      "warmup_s": 8,
+      "measured_s": 22,
+      "count": 66000,
+      "ok": 66000,
+      "fail": 0,
+      "fail_by_class": {},
+      "p50_ms": 3.704667,
+      "p95_ms": 5.282582,
+      "p99_ms": 6.406844,
+      "max_ms": 13.702404,
+      "dispatch_lag_p99_ms": 0.820215,
+      "loadgen_cores_used": 1.5833646106237003,
+      "gomaxprocs": 88,
+      "per_worker_ip_rps": 75,
+      "singleflight_collapse_estimate": 0.05790832614262236,
+      "envoy": {
+        "counters": {
+          "upstream_cx_connect_fail": 0,
+          "upstream_cx_connect_timeout": 0,
+          "upstream_cx_overflow": 0,
+          "upstream_cx_total": 66000,
+          "upstream_rq_pending_overflow": 0,
+          "upstream_rq_timeout": 0,
+          "upstream_rq_total": 66002
+        },
+        "downstream_rq_time_p50_ms": 3.005813524559928,
+        "downstream_rq_time_p95_ms": 4.811045696663863,
+        "downstream_rq_time_p99_ms": 4.971510778628657,
+        "upstream_rq_per_cx": 1.000030303030303
+      },
+      "envoy_extproc": {
+        "counters": {
+          "upstream_cx_connect_fail": 0,
+          "upstream_rq_pending_overflow": 0,
+          "upstream_rq_timeout": 0,
+          "upstream_rq_total": 65997
+        },
+        "peak_gauges": {
+          "circuit_breakers_default_cx_open": 0,
+          "circuit_breakers_default_rq_open": 0,
+          "upstream_cx_active": 88,
+          "upstream_rq_active": 11
+        },
+        "gauge_samples": 21,
+        "max_requests": 1024,
+        "active_fraction": 0.0107421875
+      },
+      "route_duration_p50_ms": 0.5353456669912366,
+      "route_duration_p95_ms": 1.3669134659879676,
+      "router_sidecar_cpu_cores": 1.4340771699943373,
+      "envoy_watchdog": {
+        "main_thread_watchdog_mega_miss": 0,
+        "main_thread_watchdog_miss": 0,
+        "worker_watchdog_mega_miss": 0,
+        "worker_watchdog_miss": 0
+      },
+      "rig_limited": false,
+      "rig_notes": null
+    },
+    {
+      "repeat": 2,
+      "step": 4,
+      "offered_qps": 4000,
+      "achieved_qps": 3997.2940808296826,
+      "warmup_s": 8,
+      "measured_s": 22,
+      "count": 88000,
+      "ok": 88000,
+      "fail": 0,
+      "fail_by_class": {},
+      "p50_ms": 3.775903,
+      "p95_ms": 6.410935,
+      "p99_ms": 20.763761,
+      "max_ms": 192.866895,
+      "dispatch_lag_p99_ms": 0.833404,
+      "loadgen_cores_used": 1.8824236105421632,
+      "gomaxprocs": 88,
+      "per_worker_ip_rps": 100,
+      "singleflight_collapse_estimate": 0.08048784165853512,
+      "envoy": {
+        "counters": {
+          "upstream_cx_connect_fail": 0,
+          "upstream_cx_connect_timeout": 0,
+          "upstream_cx_overflow": 0,
+          "upstream_cx_total": 88001,
+          "upstream_rq_pending_overflow": 0,
+          "upstream_rq_timeout": 0,
+          "upstream_rq_total": 88003
+        },
+        "downstream_rq_time_p50_ms": 3.058296732726299,
+        "downstream_rq_time_p95_ms": 4.910763792179967,
+        "downstream_rq_time_p99_ms": 12.14298418972313,
+        "upstream_rq_per_cx": 1.0000227270144657
+      },
+      "envoy_extproc": {
+        "counters": {
+          "upstream_cx_connect_fail": 0,
+          "upstream_rq_pending_overflow": 0,
+          "upstream_rq_timeout": 0,
+          "upstream_rq_total": 87994
+        },
+        "peak_gauges": {
+          "circuit_breakers_default_cx_open": 0,
+          "circuit_breakers_default_rq_open": 0,
+          "upstream_cx_active": 88,
+          "upstream_rq_active": 349
+        },
+        "gauge_samples": 21,
+        "max_requests": 1024,
+        "active_fraction": 0.3408203125
+      },
+      "route_duration_p50_ms": 0.5707129770397225,
+      "route_duration_p95_ms": 1.9044093062134286,
+      "router_sidecar_cpu_cores": 1.9164277780780545,
+      "envoy_watchdog": {
+        "main_thread_watchdog_mega_miss": 0,
+        "main_thread_watchdog_miss": 0,
+        "worker_watchdog_mega_miss": 0,
+        "worker_watchdog_miss": 0
+      },
+      "rig_limited": false,
+      "rig_notes": null
+    },
+    {
+      "repeat": 2,
+      "step": 5,
+      "offered_qps": 5000,
+      "achieved_qps": 4998.380904009652,
+      "warmup_s": 8,
+      "measured_s": 22,
+      "count": 110000,
+      "ok": 110000,
+      "fail": 0,
+      "fail_by_class": {},
+      "p50_ms": 3.993821,
+      "p95_ms": 7.252851,
+      "p99_ms": 10.417042,
+      "max_ms": 101.819006,
+      "dispatch_lag_p99_ms": 0.757884,
+      "loadgen_cores_used": 2.1630141882894973,
+      "gomaxprocs": 88,
+      "per_worker_ip_rps": 125,
+      "singleflight_collapse_estimate": 0.10853735941634157,
+      "envoy": {
+        "counters": {
+          "upstream_cx_connect_fail": 0,
+          "upstream_cx_connect_timeout": 0,
+          "upstream_cx_overflow": 0,
+          "upstream_cx_total": 110000,
+          "upstream_rq_pending_overflow": 0,
+          "upstream_rq_timeout": 0,
+          "upstream_rq_total": 110003
+        },
+        "downstream_rq_time_p50_ms": 3.112331361733236,
+        "downstream_rq_time_p95_ms": 5.315643548890967,
+        "downstream_rq_time_p99_ms": 9.287433614495473,
+        "upstream_rq_per_cx": 1.0000272727272728
+      },
+      "envoy_extproc": {
+        "counters": {
+          "upstream_cx_connect_fail": 0,
+          "upstream_rq_pending_overflow": 0,
+          "upstream_rq_timeout": 0,
+          "upstream_rq_total": 109992
+        },
+        "peak_gauges": {
+          "circuit_breakers_default_cx_open": 0,
+          "circuit_breakers_default_rq_open": 0,
+          "upstream_cx_active": 88,
+          "upstream_rq_active": 25
+        },
+        "gauge_samples": 21,
+        "max_requests": 1024,
+        "active_fraction": 0.0244140625
+      },
+      "route_duration_p50_ms": 0.6142930568280855,
+      "route_duration_p95_ms": 2.1158221868629106,
+      "router_sidecar_cpu_cores": 2.381722662442667,
+      "envoy_watchdog": {
+        "main_thread_watchdog_mega_miss": 0,
+        "main_thread_watchdog_miss": 0,
+        "worker_watchdog_mega_miss": 0,
+        "worker_watchdog_miss": 0
+      },
+      "rig_limited": false,
+      "rig_notes": null
+    },
+    {
+      "repeat": 2,
+      "step": 6,
+      "offered_qps": 6000,
+      "achieved_qps": 5998.808557545268,
+      "warmup_s": 8,
+      "measured_s": 22,
+      "count": 132000,
+      "ok": 132000,
+      "fail": 0,
+      "fail_by_class": {},
+      "p50_ms": 3.88828,
+      "p95_ms": 7.214623,
+      "p99_ms": 11.841009,
+      "max_ms": 88.658905,
+      "dispatch_lag_p99_ms": 0.396892,
+      "loadgen_cores_used": 3.5211947050466503,
+      "gomaxprocs": 88,
+      "per_worker_ip_rps": 150,
+      "singleflight_collapse_estimate": 0.12873388174017458,
+      "envoy": {
+        "counters": {
+          "upstream_cx_connect_fail": 0,
+          "upstream_cx_connect_timeout": 0,
+          "upstream_cx_overflow": 0,
+          "upstream_cx_total": 132003,
+          "upstream_rq_pending_overflow": 0,
+          "upstream_rq_timeout": 0,
+          "upstream_rq_total": 132005
+        },
+        "downstream_rq_time_p50_ms": 3.130910920719838,
+        "downstream_rq_time_p95_ms": 5.984483681112895,
+        "downstream_rq_time_p99_ms": 9.428464419475649,
+        "upstream_rq_per_cx": 1.0000151511708066
+      },
+      "envoy_extproc": {
+        "counters": {
+          "upstream_cx_connect_fail": 0,
+          "upstream_rq_pending_overflow": 0,
+          "upstream_rq_timeout": 0,
+          "upstream_rq_total": 131995
+        },
+        "peak_gauges": {
+          "circuit_breakers_default_cx_open": 0,
+          "circuit_breakers_default_rq_open": 0,
+          "upstream_cx_active": 88,
+          "upstream_rq_active": 109
+        },
+        "gauge_samples": 21,
+        "max_requests": 1024,
+        "active_fraction": 0.1064453125
+      },
+      "route_duration_p50_ms": 0.7257500247532922,
+      "route_duration_p95_ms": 2.2694347526966263,
+      "router_sidecar_cpu_cores": 2.909713506003692,
+      "envoy_watchdog": {
+        "main_thread_watchdog_mega_miss": 0,
+        "main_thread_watchdog_miss": 0,
+        "worker_watchdog_mega_miss": 0,
+        "worker_watchdog_miss": 0
+      },
+      "rig_limited": false,
+      "rig_notes": null
+    },
+    {
+      "repeat": 2,
+      "step": 7,
+      "offered_qps": 7000,
+      "achieved_qps": 6997.804046785212,
+      "warmup_s": 8,
+      "measured_s": 22,
+      "count": 154000,
+      "ok": 154000,
+      "fail": 0,
+      "fail_by_class": {},
+      "p50_ms": 4.3649,
+      "p95_ms": 7.323154,
+      "p99_ms": 9.63926,
+      "max_ms": 33.845356,
+      "dispatch_lag_p99_ms": 0.531727,
+      "loadgen_cores_used": 3.8709228330769268,
+      "gomaxprocs": 88,
+      "per_worker_ip_rps": 175,
+      "singleflight_collapse_estimate": 0.1501768035914548,
+      "envoy": {
+        "counters": {
+          "upstream_cx_connect_fail": 0,
+          "upstream_cx_connect_timeout": 0,
+          "upstream_cx_overflow": 0,
+          "upstream_cx_total": 154005,
+          "upstream_rq_pending_overflow": 0,
+          "upstream_rq_timeout": 0,
+          "upstream_rq_total": 154005
+        },
+        "downstream_rq_time_p50_ms": 3.1457626001252597,
+        "downstream_rq_time_p95_ms": 6.338041085840059,
+        "downstream_rq_time_p99_ms": 9.323000733675718,
+        "upstream_rq_per_cx": 1
+      },
+      "envoy_extproc": {
+        "counters": {
+          "upstream_cx_connect_fail": 0,
+          "upstream_rq_pending_overflow": 0,
+          "upstream_rq_timeout": 0,
+          "upstream_rq_total": 153992
+        },
+        "peak_gauges": {
+          "circuit_breakers_default_cx_open": 0,
+          "circuit_breakers_default_rq_open": 0,
+          "upstream_cx_active": 88,
+          "upstream_rq_active": 33
+        },
+        "gauge_samples": 21,
+        "max_requests": 1024,
+        "active_fraction": 0.0322265625
+      },
+      "route_duration_p50_ms": 0.7883134306958072,
+      "route_duration_p95_ms": 2.306325252633842,
+      "router_sidecar_cpu_cores": 3.2805830640061693,
+      "envoy_watchdog": {
+        "main_thread_watchdog_mega_miss": 0,
+        "main_thread_watchdog_miss": 0,
+        "worker_watchdog_mega_miss": 0,
+        "worker_watchdog_miss": 0
+      },
+      "rig_limited": false,
+      "rig_notes": null
+    },
+    {
+      "repeat": 2,
+      "step": 8,
+      "offered_qps": 8000,
+      "achieved_qps": 7998.442654133888,
+      "warmup_s": 8,
+      "measured_s": 22,
+      "count": 176000,
+      "ok": 176000,
+      "fail": 0,
+      "fail_by_class": {},
+      "p50_ms": 4.636577,
+      "p95_ms": 8.717894,
+      "p99_ms": 12.633565,
+      "max_ms": 85.596345,
+      "dispatch_lag_p99_ms": 0.914596,
+      "loadgen_cores_used": 4.060356473436813,
+      "gomaxprocs": 88,
+      "per_worker_ip_rps": 200,
+      "singleflight_collapse_estimate": 0.17516453405456944,
+      "envoy": {
+        "counters": {
+          "upstream_cx_connect_fail": 0,
+          "upstream_cx_connect_timeout": 0,
+          "upstream_cx_overflow": 0,
+          "upstream_cx_total": 176004,
+          "upstream_rq_pending_overflow": 0,
+          "upstream_rq_timeout": 0,
+          "upstream_rq_total": 176008
+        },
+        "downstream_rq_time_p50_ms": 3.352039905236967,
+        "downstream_rq_time_p95_ms": 8.482079074866498,
+        "downstream_rq_time_p99_ms": 9.879462107012767,
+        "upstream_rq_per_cx": 1.00002272675621
+      },
+      "envoy_extproc": {
+        "counters": {
+          "upstream_cx_connect_fail": 0,
+          "upstream_rq_pending_overflow": 0,
+          "upstream_rq_timeout": 0,
+          "upstream_rq_total": 175986
+        },
+        "peak_gauges": {
+          "circuit_breakers_default_cx_open": 0,
+          "circuit_breakers_default_rq_open": 0,
+          "upstream_cx_active": 88,
+          "upstream_rq_active": 40
+        },
+        "gauge_samples": 21,
+        "max_requests": 1024,
+        "active_fraction": 0.0390625
+      },
+      "route_duration_p50_ms": 0.9398591835208393,
+      "route_duration_p95_ms": 2.3569839961620307,
+      "router_sidecar_cpu_cores": 3.7859958416046315,
+      "envoy_watchdog": {
+        "main_thread_watchdog_mega_miss": 0,
+        "main_thread_watchdog_miss": 0,
+        "worker_watchdog_mega_miss": 0,
+        "worker_watchdog_miss": 0
+      },
+      "rig_limited": false,
+      "rig_notes": null
+    }
+  ]
+}
