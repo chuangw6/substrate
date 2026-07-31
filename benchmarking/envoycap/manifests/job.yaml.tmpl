@@ -1,0 +1,123 @@
+# Copyright 2026 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# The open-loop capacity generator, run as a one-shot Job. Rendered by
+# benchmarking/envoycap/run.sh; every ${...} placeholder is substituted before
+# kubectl apply. Nothing in ate-system is touched: the router's Envoy admin
+# port and the router sidecar's metrics port are reached by pod IP, injected
+# here as env vars, because the deployment is measured as shipped.
+
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: benchmarking
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: ${JOB_NAME}
+  namespace: benchmarking
+  labels:
+    app: envoycap
+spec:
+  backoffLimit: 0
+  # A retried run would create a second actor pool while the first is still
+  # being torn down, so a failed run stays failed and is diagnosed from its log.
+  ttlSecondsAfterFinished: 86400
+  template:
+    metadata:
+      labels:
+        app: envoycap
+    spec:
+      restartPolicy: Never
+      # Must exceed the binary's 120 s teardown budget: on SIGTERM the pool of
+      # actors has to be suspended and deleted before the container is killed,
+      # or a cancelled run leaks actors holding worker slots.
+      terminationGracePeriodSeconds: 180
+      # The generator gets a node to itself. On a shared node the control-plane
+      # components in the per-request hot path compete with the load generator
+      # for CPU and the measurement quietly becomes a measurement of the node.
+      nodeSelector:
+        cloud.google.com/gke-nodepool: loadgen
+      tolerations:
+      - key: ate.dev/dedicated
+        operator: Equal
+        value: loadgen
+        effect: NoSchedule
+      containers:
+      - name: envoycap
+        image: ${IMAGE}
+        imagePullPolicy: IfNotPresent
+        args:
+        - "--actors=${ACTORS}"
+        - "--start-qps=${START_QPS}"
+        - "--max-qps=${MAX_QPS}"
+        - "--steps=${STEPS}"
+        - "--step-duration=${STEP_DURATION}"
+        - "--repeat=${REPEAT}"
+        - "--api-endpoint=${API_ENDPOINT}"
+        - "--router-url=${ROUTER_URL}"
+        - "--atespace=${ATESPACE}"
+        env:
+        # The Envoy admin endpoint (:9901) and the router sidecar's Prometheus
+        # endpoint (:9090) are on the router pod but deliberately absent from
+        # the atenet-router Service. Passing the pod IP in keeps the layer
+        # decomposition available without editing the shipped manifest.
+        - name: ROUTER_POD_IP
+          value: "${ROUTER_POD_IP}"
+        - name: ROUTER_NODE
+          value: "${ROUTER_NODE}"
+        - name: CLUSTER_NAME
+          value: "${CLUSTER_NAME}"
+        - name: GIT_SHA
+          value: "${GIT_SHA}"
+        - name: IMAGE
+          value: "${IMAGE}"
+        # Recorded in the run JSON so a run that landed on the same node as the
+        # router is visible after the fact rather than inferred.
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+        volumeMounts:
+        - name: servicedns-ca
+          mountPath: /run/servicedns-ca
+          readOnly: true
+        - name: podidentity
+          mountPath: /run/podidentity.podcert.ate.dev
+          readOnly: true
+        resources:
+          requests:
+            cpu: "6"
+            memory: "4Gi"
+      volumes:
+      - name: servicedns-ca
+        projected:
+          sources:
+          - clusterTrustBundle:
+              signerName: servicedns.podcert.ate.dev/identity
+              labelSelector:
+                matchLabels:
+                  podcert.ate.dev/canarying: live
+              path: ca.crt
+      # The generator's own client identity, presented to ateapi. The mount
+      # paths above are hard-coded in internal/benchmarking/boomer/glutton's
+      # DialControl, which this binary reuses verbatim.
+      - name: podidentity
+        projected:
+          sources:
+          - podCertificate:
+              signerName: podidentity.podcert.ate.dev/identity
+              keyType: ECDSAP256
+              credentialBundlePath: credential-bundle.pem

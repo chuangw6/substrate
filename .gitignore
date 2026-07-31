@@ -53,3 +53,8 @@ Thumbs.db
 
 # Stray local build outputs (go build ./tools/... without -o)
 /validate-image-cache
+
+# Envoy capacity measurement run artifacts (logs, JSON, charts). Every run
+# creates one of these and they are large; the artifacts backing RESULTS.md are
+# published to benchmarking/envoycap/results/ instead, which is tracked.
+/benchmarking/envoycap/runs/
