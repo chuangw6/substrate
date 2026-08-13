@@ -12,17 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Each test runs `runner.py -f <file> -t <duration> -u <users> --name <name>`
-# with --tag set to the build commit hash and --dest set from the orchestrator's
-# --dest flag. The orchestrator deploys + tears down substrate + workloads
-# around each test so runs don't pollute each other.
+# The orchestrator deploys + tears down substrate + workloads around each test
+# so runs don't pollute each other.
 #
-# Optional `flags` is a list of arbitrary strings appended to runner.py's
-# argv; runner.py forwards them to locust verbatim.
-#
-# Optional `workerCount` (default 1) sets the WorkerPool replica count for
-# the deploy that runs before this test. The orchestrator redeploys
-# workloads between tests, so each test can pick its own scale.
+# Optional `kind` (default "locust") picks what the test runs. Allowed values:
+# "locust" | "routercap". The two take different fields; see below.
 #
 # Optional `sandboxClass` (default "gvisor") picks the sandbox runtime for
 # the benchmark WorkerPool. Allowed values: "gvisor" | "microvm".
@@ -33,6 +27,41 @@
 # file into the cloned repo as .ate-dev-env.sh before the test runs and
 # deletes it after, so different tests can target different clusters /
 # projects from one CronJob run.
+#
+# ---- kind: locust -----------------------------------------------------------
+#
+# Runs `runner.py -f <file> -t <duration> -u <users> --name <name>` in a Job,
+# with --tag set to the build commit hash and --dest from the orchestrator's
+# --dest flag. `file`, `duration` and `users` are required.
+#
+# Optional `flags` is a list of arbitrary strings appended to runner.py's
+# argv; runner.py forwards them to locust verbatim.
+#
+# Optional `workerCount` (default 1) sets the WorkerPool replica count for
+# the deploy that runs before this test. The orchestrator redeploys
+# workloads between tests, so each test can pick its own scale.
+#
+# ---- kind: routercap --------------------------------------------------------
+#
+# Measures how much throughput atenet-router sustains at one Envoy CPU limit,
+# by running benchmarking/routercap/run.sh from the orchestrator. Required:
+#
+#   cpuLimit  Envoy's CPU limit for this run, in whole cores. One limit per
+#             entry — sweeping several means several entries.
+#   actors    Actors to warm before the ladder starts. Also the WorkerPool
+#             replica count: one actor per worker pod, so there is no separate
+#             workerCount.
+#   rungs     Rungs in the offered-load ladder, 1000 QPS apart, 45s each.
+#
+# The orchestrator uploads the run's stats.jsonl and summary.json to the same
+# GCS layout runner.py uses. A rig-limited run (the generator hitting its own
+# ceiling before the router hits its) still counts as complete: the ladder
+# stops early but every window up to that point is valid data.
+#
+# PREREQUISITE: the target cluster gets two tainted node pools, `router` and
+# `loadgen`, one large node each. The orchestrator creates them if absent and
+# never deletes them, so they bill between runs — see the automation README.
+# This is why the example below is commented out rather than live.
 
 tests:
   - name: glutton_baseline_1_user
@@ -83,3 +112,22 @@ tests:
       - "0.5"
       - "--max-wait-time"
       - "1.0"
+
+  # Router capacity at 4 and 8 Envoy cores. Commented out because enabling it
+  # adds two large tainted node pools to the target cluster that outlive the
+  # run; read the prerequisite above before uncommenting.
+  #
+  # - name: routercap_4_cores
+  #   description: "atenet-router capacity at a 4-core Envoy limit"
+  #   kind: routercap
+  #   targetCluster: dev
+  #   cpuLimit: 4
+  #   actors: 100
+  #   rungs: 16
+  # - name: routercap_8_cores
+  #   description: "atenet-router capacity at an 8-core Envoy limit"
+  #   kind: routercap
+  #   targetCluster: dev
+  #   cpuLimit: 8
+  #   actors: 100
+  #   rungs: 16

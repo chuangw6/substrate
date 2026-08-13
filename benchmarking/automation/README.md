@@ -22,12 +22,65 @@ Each run uploads results to GCS via `benchmarking/locust/runner.py`.
    stages kata + cloud-hypervisor + virtiofsd assets to the cluster's object
    store bucket and applies the cluster-wide `microvm` SandboxConfig.
 6. For each test in `tests.yaml`:
-   - Submits a Job using the just-built locust image; the Job runs
-     `runner.py -f <file> -t <duration> -u <users> --tag <commit> --name <name>
-     --dest <dest>`.
-   - Polls until complete/failed/timeout; tails logs; deletes the Job.
+   - Runs it according to its `kind` (below).
    - Tears down workloads + micro-VM deps (if any) + substrate.
    - If not the last test, redeploys them so the next run starts clean.
+
+## Test kinds
+
+Each entry sets `kind: locust | routercap` (default `locust`).
+
+**`locust`** submits a Job using the locust image, which runs
+`runner.py -f <file> -t <duration> -u <users> --tag <commit> --name <name>
+--dest <dest>`. The orchestrator polls until complete/failed/timeout, tails
+the logs and deletes the Job. `runner.py` uploads its own results.
+
+**`routercap`** measures how much throughput `atenet-router` sustains at one
+Envoy CPU limit. Unlike a locust test it is not a Job the orchestrator submits
+and polls: `benchmarking/routercap/run.sh` runs *in* the orchestrator, because
+it is what resizes the router between runs and that privilege does not belong
+to a load generator. `run.sh` launches its own read-only generator Job, streams
+the records back and writes `stats.jsonl` plus a `summary.json`, which the
+orchestrator then uploads to the same GCS layout `runner.py` uses.
+
+The test's status comes from `run.sh`'s exit code. `0` (clean) and `3`
+(rig-limited — the generator hit its own ceiling before the router hit its, so
+the ladder stopped early but every window up to that point is valid) both count
+as complete; anything else fails. A run that exits clean but produces no
+`stats.jsonl` is reported failed regardless.
+
+### routercap prerequisites
+
+The target cluster needs two tainted node pools, `router` and `loadgen`, each
+one large node (`c3-standard-88` by default). The orchestrator creates them via
+`benchmarking/routercap/pools.sh` if absent — the same script
+`benchmarking/routercap/provision.sh` uses for the dedicated cluster it builds,
+where it asks for all four pools instead of two.
+
+**They are never deleted.** Two `c3-standard-88` nodes bill continuously
+between runs, which is roughly \$9/hour, so a routercap entry is a standing
+cost and not just a per-run one. Delete the pools when you stop running them:
+
+```bash
+gcloud container node-pools delete router  --cluster=<CLUSTER_NAME> --location=<CLUSTER_LOCATION>
+gcloud container node-pools delete loadgen --cluster=<CLUSTER_NAME> --location=<CLUSTER_LOCATION>
+```
+
+Isolation is the reason for the pools: an Envoy CPU limit is CFS quota, not
+core pinning, and does not partition run-queue delay, L3, memory bandwidth, the
+NIC or conntrack — all of which are per node. Giving the router a node to
+itself partitions all of them at once, and giving the generator its own keeps
+its packet processing out of the router's measurement.
+
+The orchestrator also pins `atenet-router` onto the `router` pool and lets the
+`atelet` DaemonSet past both taints
+(`benchmarking/routercap/placement.sh`). Everything else — `ate-api-server`,
+the actors, the rest of `ate-system` — stays on whatever pool the cluster
+already has, which is the difference between this and the fully isolated
+four-pool layout `provision.sh` builds.
+
+Because the orchestrator uploads a routercap run's results itself, **its** KSA
+needs the bucket permission, not the runner's — see IAM prerequisites below.
 
 ## Choosing a sandbox class
 
@@ -132,6 +185,17 @@ gcloud projects add-iam-policy-binding <TEST_PROJECT_ID> \
 gcloud projects add-iam-policy-binding <TEST_PROJECT_ID> \
   --role=roles/artifactregistry.writer --member="${ORCH_PRINCIPAL}"
 ```
+
+With any `kind: routercap` entry in `tests.yaml`, the orchestrator also needs
+`roles/storage.objectUser` on the destination bucket, because it uploads those
+runs itself rather than letting the Job do it:
+
+```bash
+gcloud storage buckets add-iam-policy-binding gs://<DEST_BUCKET> \
+  --role=roles/storage.objectUser --member="${ORCH_PRINCIPAL}"
+```
+
+`container.admin` already covers creating the routercap node pools.
 
 **Runner Job pod** (KSA `benchmark-runner` in namespace `benchmarking` on the
 test cluster's project) needs `roles/storage.objectUser` on the destination

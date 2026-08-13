@@ -15,9 +15,16 @@
 """Substrate benchmark orchestrator.
 
 Clones a branch of the substrate repo, builds and deploys it to the test
-cluster, then submits one Kubernetes Job per entry in tests.yaml that runs
-benchmarking/locust/runner.py. Tears down substrate + workloads between
-tests so they don't pollute each other.
+cluster, then runs one benchmark per entry in tests.yaml. Tears down
+substrate + workloads between tests so they don't pollute each other.
+
+Two kinds of benchmark, chosen by `kind` on the test entry:
+
+  locust     (default) submits a Kubernetes Job running
+             benchmarking/locust/runner.py, which uploads its own results.
+  routercap  drives benchmarking/routercap/run.sh from here, which measures
+             atenet-router at one Envoy CPU limit and writes a stats.jsonl
+             this script then uploads.
 """
 
 import argparse
@@ -31,6 +38,7 @@ import sys
 import time
 import uuid
 from collections.abc import Iterable
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -42,6 +50,27 @@ TARGET_CLUSTER_DIR = "/etc/orchestrator/target-clusters"
 ENV_FILE_NAME = ".ate-dev-env.sh"
 RUNNER_JOB_TMPL = "/opt/automation/manifests/runner-job.yaml.tmpl"
 NAMESPACE = "benchmarking"
+
+TEST_KINDS = ("locust", "routercap")
+
+# Where the benchmark WorkerPool's pods land, mirroring
+# benchmarking/routercap/common.sh. A routercap run wants one actor per worker
+# pod, so it has to wait for the pods rather than just the ActorTemplates.
+WORKER_NS = "benchmark-workloads"
+WORKER_SELECTOR = "ate.dev/worker-pool"
+
+# The pools a routercap run cannot be trusted without: the router alone on a
+# node so nothing else competes for its run queue, L3, memory bandwidth or
+# NIC, and the generator alone on another so its own packet processing is not
+# folded into the number. The remaining two pools provision.sh makes are a
+# dedicated-cluster luxury; on a shared test cluster everything else stays
+# wherever the cluster already puts it.
+ROUTERCAP_POOLS = "router,loadgen"
+
+# run.sh's own default seconds-per-rung. Duplicated here only to size this
+# side's timeout, which is generous enough that being a little out of step
+# costs nothing; run.sh enforces the real deadline on the Job itself.
+ROUTERCAP_HOLD_SECONDS = 45
 
 # Snapshot the process's initial env so apply_config can return to a known
 # baseline before sourcing the next config (avoids stale vars carrying over
@@ -339,6 +368,195 @@ def teardown_workloads() -> None:
     run_no_check(["benchmarking/workloads/deploy.sh", "--delete"])
 
 
+def routercap_env() -> None:
+    """Point the routercap scripts at this test's target cluster.
+
+    They take their cluster from ROUTERCAP_* rather than CLUSTER_NAME because
+    on a developer's machine they drive a dedicated cluster of their own and
+    must not be steerable by an inherited kubeconfig. Their rc::assert_cluster
+    re-reads the kubeconfig's current context and compares it to
+    ROUTERCAP_CLUSTER, so pointing them at the wrong cluster is refused rather
+    than measured."""
+    os.environ["ROUTERCAP_CLUSTER"] = os.environ["CLUSTER_NAME"]
+    os.environ["ROUTERCAP_CLUSTER_LOCATION"] = os.environ["CLUSTER_LOCATION"]
+    # The kubeconfig gcloud_setup_for_target_cluster already populated, rather
+    # than a second get-credentials into a file of our own.
+    os.environ["ROUTERCAP_KUBECONFIG"] = os.environ.get(
+        "KUBECONFIG"
+    ) or os.path.expanduser("~/.kube/config")
+
+
+def ensure_isolation_pools() -> None:
+    """Create the tainted router + loadgen node pools if they are absent.
+
+    Idempotent and shared with benchmarking/routercap/provision.sh, which asks
+    the same script for all four pools on the dedicated cluster it builds.
+    Runs before the deploy because a new pool's nodes take minutes to register
+    and nothing can be pinned to a pool that does not exist yet."""
+    run(["benchmarking/routercap/pools.sh", "--pools", ROUTERCAP_POOLS])
+
+
+def apply_routercap_placement() -> None:
+    """Pin atenet-router onto the router pool and let atelet past the taints.
+
+    Must run after deploy_substrate: it patches workloads install-ate.sh
+    creates. The rollout wait is what turns "the router node is full or
+    missing" into a clear failure here instead of a ten-minute timeout inside
+    run.sh."""
+    run(["benchmarking/routercap/placement.sh", "--pools", ROUTERCAP_POOLS])
+    run(
+        [
+            "kubectl",
+            "-n",
+            "ate-system",
+            "rollout",
+            "status",
+            "deployment/atenet-router",
+            "--timeout=10m",
+        ]
+    )
+
+
+def wait_for_worker_pods(want: int, timeout: int = 900) -> None:
+    """Block until `want` benchmark worker pods are Running.
+
+    deploy_workloads only waits for the ActorTemplates to go Ready, which says
+    nothing about the WorkerPool's replicas. routercap warms one actor per
+    worker pod and its preflight refuses to start with fewer pods than actors,
+    so without this a routercap test races the pool coming up and fails on a
+    cluster that would have worked a minute later."""
+    start = time.time()
+    running = 0
+    while time.time() - start < timeout:
+        r = subprocess.run(
+            [
+                "kubectl",
+                "get",
+                "pods",
+                "-n",
+                WORKER_NS,
+                "-l",
+                WORKER_SELECTOR,
+                "--field-selector=status.phase=Running",
+                "-o",
+                "name",
+            ],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        if r.returncode == 0:
+            running = len([ln for ln in r.stdout.splitlines() if ln.strip()])
+            if running >= want:
+                print(f"{running} worker pods Running", flush=True)
+                return
+        print(f"Waiting for worker pods: {running}/{want} Running", flush=True)
+        time.sleep(10)
+    raise RuntimeError(
+        f"only {running}/{want} worker pods Running after {timeout}s"
+    )
+
+
+def upload_to_gcs(local_path: Path, gcs_uri: str) -> None:
+    # Imported here so non-GCS use doesn't require google-cloud-storage.
+    from google.cloud import storage
+
+    bucket_name, _, blob_path = gcs_uri[len("gs://"):].partition("/")
+    storage.Client().bucket(bucket_name).blob(blob_path).upload_from_filename(
+        str(local_path)
+    )
+
+
+def upload(src: Path, dest: str) -> None:
+    if dest.startswith("gs://"):
+        upload_to_gcs(src, dest)
+    else:
+        dest_path = Path(dest)
+        dest_path.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy(src, dest_path)
+
+
+def results_prefix(dest: str, name: str, tag: str) -> str:
+    """The layout runner.py writes to, so both kinds of benchmark land in one
+    queryable tree. Hive partitioning: run_date and run_ts are what a reader
+    filters on, run_tag is the commit."""
+    now = datetime.now(timezone.utc)
+    return (
+        f"{dest.rstrip('/')}/runs/{name}"
+        f"/run_date={now.strftime('%Y-%m-%d')}/run_ts={int(now.timestamp())}"
+        f"/run_tag={tag}"
+    )
+
+
+def run_routercap(test: dict[str, Any], dest: str, commit: str) -> str:
+    """Run one routercap ladder and upload what it produced.
+
+    Unlike a locust test this is not a Job we submit and poll: run.sh is what
+    holds the cluster-mutating privileges (it resizes the router between runs),
+    so it runs here and launches its own read-only generator Job."""
+    name = test["name"]
+    cpu_limit = int(test["cpuLimit"])
+    actors = int(test["actors"])
+    rungs = int(test["rungs"])
+
+    out_dir = Path(f"/tmp/routercap-{sanitize(name)}-{uuid.uuid4().hex[:6]}")
+    r = run_no_check(
+        [
+            "benchmarking/routercap/run.sh",
+            "--cpu-limit",
+            str(cpu_limit),
+            "--actors",
+            str(actors),
+            "--rungs",
+            str(rungs),
+            "--name",
+            name,
+            "--tag",
+            commit,
+            "--output-dir",
+            str(out_dir),
+        ],
+        timeout=rungs * ROUTERCAP_HOLD_SECONDS + 3600,
+    )
+
+    # run.sh's exit code is the only thing that says whether the number is
+    # usable, so it is read rather than collapsed into "the command failed".
+    # 3 is rig-limited: the generator ran out before the router did, which
+    # stops the ladder early but leaves every window up to that point valid.
+    if r.returncode == 0:
+        status = "complete"
+    elif r.returncode == 3:
+        print(
+            f"{name}: rig-limited (exit 3) — the ladder stopped early but its "
+            "windows stand; treating as complete",
+            flush=True,
+        )
+        status = "complete"
+    else:
+        print(f"{name}: run.sh exited {r.returncode}", flush=True)
+        status = "failed"
+
+    prefix = results_prefix(dest, name, commit)
+    uploaded = 0
+    for basename in ("stats.jsonl", "summary.json"):
+        src = out_dir / basename
+        if not src.exists():
+            print(f"Skipping {src}: not produced", flush=True)
+            continue
+        target = f"{prefix}/{basename}"
+        upload(src, target)
+        uploaded += 1
+        print(f"Uploaded {src} -> {target}", flush=True)
+    shutil.rmtree(out_dir, ignore_errors=True)
+
+    # A run that exited clean but wrote nothing is a broken pipeline wearing a
+    # success label, so it does not get to report one.
+    if status == "complete" and not uploaded:
+        print(f"{name}: exited {r.returncode} but produced no data", flush=True)
+        return "failed"
+    return status
+
+
 def run_test(
     test: dict[str, Any],
     image: str,
@@ -398,6 +616,8 @@ def main() -> None:
 
     tests = yaml.safe_load(Path(args.tests).read_text())["tests"]
     print(f"Running {len(tests)} test(s)", flush=True)
+    # Every entry is validated before the first one runs: a typo in the last
+    # test should not be discovered an hour into the sweep.
     for t in tests:
         if not t.get("targetCluster"):
             sys.exit(
@@ -409,6 +629,23 @@ def main() -> None:
                 f"test {t.get('name')!r} has invalid sandboxClass "
                 f"{sandbox_class!r} (want one of {list(SANDBOX_CLASSES)})"
             )
+        kind = t.get("kind", "locust")
+        if kind not in TEST_KINDS:
+            sys.exit(
+                f"test {t.get('name')!r} has invalid kind {kind!r} "
+                f"(want one of {list(TEST_KINDS)})"
+            )
+        required = (
+            ("cpuLimit", "actors", "rungs")
+            if kind == "routercap"
+            else ("file", "duration", "users")
+        )
+        for field in required:
+            if t.get(field) is None:
+                sys.exit(
+                    f"test {t.get('name')!r} (kind {kind!r}) missing required "
+                    f"{field!r} field"
+                )
 
     # Per-target-cluster caches: re-running setup for the same target
     # cluster is wasted work, so we track what was last set up and only
@@ -416,6 +653,10 @@ def main() -> None:
     # rebuilt by install-ate.sh each test anyway via ko apply).
     last_target = None
     locust_image = None
+    # Target clusters whose isolation pools have been checked this run. The
+    # check is idempotent but it is several gcloud round trips, and only
+    # routercap entries need it at all.
+    pooled: set[str] = set()
     results = []
 
     for i, test in enumerate(tests):
@@ -435,11 +676,25 @@ def main() -> None:
             results.append((test["name"], "config-error"))
             continue
 
+        kind = test.get("kind", "locust")
+
         try:
             if target_cluster != last_target:
                 gcloud_setup_for_target_cluster()
-                locust_image = build_locust_image(commit)
+                # Built on demand rather than here: a target cluster whose
+                # entries are all routercap has no use for it, and a docker
+                # build that nothing runs is a failure mode for free.
+                locust_image = None
                 last_target = target_cluster
+
+            if kind == "routercap":
+                # Before the deploy, not after: a pool created here takes
+                # minutes to register its nodes, and placement pins them
+                # straight afterwards.
+                routercap_env()
+                if target_cluster not in pooled:
+                    ensure_isolation_pools()
+                    pooled.add(target_cluster)
 
             # Idempotent sweep before anything else: a previous CronJob
             # fire that crashed mid-test (or any other process that left
@@ -460,15 +715,29 @@ def main() -> None:
                 # deploy_workloads needs the microvm SandboxConfig.
                 if sandbox_class == "microvm":
                     install_microvm_deps()
-                deploy_workloads(test.get("workerCount", 1), sandbox_class)
+                if kind == "routercap":
+                    # One actor per worker pod is what keeps the per-worker
+                    # connection-rate limit from binding before the router's
+                    # own ceiling, so `actors` is the replica count too.
+                    actors = int(test["actors"])
+                    apply_routercap_placement()
+                    deploy_workloads(actors, sandbox_class)
+                    wait_for_worker_pods(actors)
+                else:
+                    if locust_image is None:
+                        locust_image = build_locust_image(commit)
+                    deploy_workloads(test.get("workerCount", 1), sandbox_class)
                 try:
-                    status = run_test(
-                        test,
-                        locust_image,
-                        args.dest,
-                        commit,
-                        args.runner_job_tmpl,
-                    )
+                    if kind == "routercap":
+                        status = run_routercap(test, args.dest, commit)
+                    else:
+                        status = run_test(
+                            test,
+                            locust_image,
+                            args.dest,
+                            commit,
+                            args.runner_job_tmpl,
+                        )
                 except Exception as e:
                     print(f"Test {test['name']} crashed: {e}", flush=True)
             except Exception as e:

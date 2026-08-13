@@ -288,13 +288,20 @@ asserts the node fits `ROUTERCAP_MAX_CPU_LIMIT` (64) alongside the sidecar,
 and `run.sh` refuses a larger `--cpu-limit` rather than launching a run whose
 router pod sits Pending.
 
+The two halves of that setup — creating the pools (`pools.sh`) and putting
+`ate-system` on them (`placement.sh`) — are separate scripts because
+`provision.sh` is not their only caller. See [Running from
+CI](#running-from-ci).
+
 ### Layout
 
 | Path | What it is |
 |---|---|
 | `benchmarking/routercap/provision.sh` | one-shot cluster build |
+| `benchmarking/routercap/pools.sh` | ensures the tainted node pools exist; idempotent, and takes a subset |
+| `benchmarking/routercap/placement.sh` | pins `ate-system` onto those pools and lets `atelet` past their taints |
 | `benchmarking/routercap/run.sh` | one run: patches the router to the CPU limit, launches the generator Job, demuxes its output into the run directory |
-| `benchmarking/routercap/common.sh` | shared config and helpers for the two scripts |
+| `benchmarking/routercap/common.sh` | shared config and helpers for the scripts |
 | `benchmarking/routercap/demux.py` | splits the Job's merged log stream into `stats.jsonl` (tagged records) and `job.log` (everything else) |
 | `benchmarking/routercap/summarize.py` | `stats.jsonl` → `summary.json`; no rendering |
 | `benchmarking/routercap/manifests/` | the generator Job template and its RBAC |
@@ -385,3 +392,43 @@ python3 benchmarking/routercap/summarize.py runs/<timestamp>/stats.jsonl
 gcloud container clusters delete substrate-routercap \
   --location=us-central1-a --project="${PROJECT_ID}" --quiet
 ```
+
+## Running from CI
+
+[benchmarking/automation](../automation) can run this on a schedule. An entry
+in its `tests.yaml` with `kind: routercap` takes `cpuLimit`, `actors` and
+`rungs`, and the orchestrator turns it into one `run.sh` invocation:
+
+```yaml
+- name: routercap_4_cores
+  kind: routercap
+  targetCluster: dev
+  cpuLimit: 4
+  actors: 100
+  rungs: 16
+```
+
+Two things differ from a hand-run ladder.
+
+**It runs on a shared cluster, not `substrate-routercap`.** The orchestrator
+calls `pools.sh --pools router,loadgen`, so the target cluster gets two of the
+four pools: the router and the generator each get a node to themselves, and
+everything else — api-server, valkey, the actors — stays wherever the cluster
+already put it. That is weaker isolation than `provision.sh` builds, and the
+tradeoff is deliberate: those two pools are what the measurement depends on,
+and the pools are never deleted, so each one is a standing bill. `placement.sh
+--pools router,loadgen` then pins `atenet-router` and lets `atelet` past the
+taints.
+
+**Nothing runs the ladder twice.** One entry is one CPU limit, so a sweep is
+several entries, each free to fail or be retried on its own. `--name` puts the
+entry's name in every record's `test_name`, which is what separates one
+entry's series from another's once they share a table.
+
+The orchestrator maps the exit codes above onto a test status: 0 and 3 are
+complete, everything else fails, and a run that exits clean but writes no
+`stats.jsonl` fails anyway. It uploads `stats.jsonl` and `summary.json` itself,
+to the GCS layout `benchmarking/locust/runner.py` uses — the generator Job is
+distroless and read-only and cannot upload its own. See the [automation
+README](../automation/README.md#routercap-prerequisites) for the IAM that
+needs.

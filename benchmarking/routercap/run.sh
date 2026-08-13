@@ -44,6 +44,10 @@ LOADGEN_MEMORY=64Gi
 SIDECAR_CORES="${RC_SIDECAR_CORES}"
 OUTPUT_DIR=""
 TAG=""
+# Goes into every record's test_name. One value per CI entry, so a reader can
+# tell one entry's series from another's in a shared table; the default suits
+# a hand-run ladder, where there is only one.
+NAME="routercap"
 IMAGE="${ROUTERCAP_IMAGE:-}"
 SMOKE=false
 
@@ -59,6 +63,7 @@ Usage: $0 [options]
   --hold N              Seconds per rung (default: ${HOLD_S}).
   --warmup N            Leading seconds of each rung marked warmup (default: ${WARMUP_S}).
   --output-dir DIR      Where stats.jsonl lands (default: benchmarking/routercap/runs/<utc timestamp>).
+  --name N              Value of test_name in every record (default: ${NAME}).
   --tag T               Run tag; defaults to the short commit, with -dirty if the tree is.
   --image REF           Skip the ko build and use this image.
   --smoke               2 actors, 3 short rungs. Proves the rig, measures nothing.
@@ -84,6 +89,8 @@ while [[ $# -gt 0 ]]; do
     --warmup=*) WARMUP_S="${1#*=}" ;;
     --output-dir) shift; OUTPUT_DIR="$1" ;;
     --output-dir=*) OUTPUT_DIR="${1#*=}" ;;
+    --name) shift; NAME="$1" ;;
+    --name=*) NAME="${1#*=}" ;;
     --tag) shift; TAG="$1" ;;
     --tag=*) TAG="${1#*=}" ;;
     --image) shift; IMAGE="$1" ;;
@@ -113,6 +120,12 @@ if (( CPU_LIMIT > RC_MAX_CPU_LIMIT )); then
   # The router pod would sit Pending and the run would measure the pod that is
   # still running, under the new limit's label.
   rc::die "--cpu-limit ${CPU_LIMIT} is above ROUTERCAP_MAX_CPU_LIMIT (${RC_MAX_CPU_LIMIT}), which is what provision.sh sized the router node against"
+fi
+# The name reaches the Job as a label value, where the API server enforces this
+# same shape. Checked here so a caller passing an unusable name is told what is
+# wrong now, rather than by a rejected manifest after the router was resized.
+if ! [[ "${NAME}" =~ ^[A-Za-z0-9]([A-Za-z0-9._-]*[A-Za-z0-9])?$ ]] || (( ${#NAME} > 63 )); then
+  rc::die "--name '${NAME}' is not a valid Kubernetes label value: up to 63 characters of letters, digits, '-', '_' or '.', starting and ending with a letter or digit"
 fi
 
 rc::need kubectl git go python3
@@ -291,7 +304,7 @@ run_ladder() {
     -e "s|\${RUNGS}|${RUNGS}|g" \
     -e "s|\${HOLD}|${HOLD_S}s|g" \
     -e "s|\${WARMUP}|${WARMUP_S}s|g" \
-    -e "s|\${NAME}|routercap|g" \
+    -e "s|\${NAME}|${NAME}|g" \
     -e "s|\${TAG}|${TAG}|g" \
     -e "s|\${LOADGEN_CPU}|${LOADGEN_CPU}|g" \
     -e "s|\${LOADGEN_MEMORY}|${LOADGEN_MEMORY}|g" \

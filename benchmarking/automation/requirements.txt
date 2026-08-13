@@ -13,3 +13,9 @@
 # limitations under the License.
 
 PyYAML
+
+# A routercap test's results are uploaded from the orchestrator rather than by
+# the Job that produced them, because the generator runs distroless and read
+# only. A locust test still uploads its own, so this is unused on a tests.yaml
+# with no routercap entries.
+google-cloud-storage

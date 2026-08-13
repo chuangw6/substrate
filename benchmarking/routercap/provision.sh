@@ -167,63 +167,13 @@ else
     --enable-kubernetes-unstable-apis=certificates.k8s.io/v1beta1/podcertificaterequests,certificates.k8s.io/v1beta1/clustertrustbundles
 fi
 
-# Pools are created router-first: it is the one pool that genuinely needs the
-# large machine type, so a zone shortage surfaces before the other three have
-# been paid for.
-
-# gcloud reports taint effects in the API's enum spelling, not the one you
-# create them with, so a comparison has to translate.
-taint_enum() {
-  case "$1" in
-    NoSchedule)       echo NO_SCHEDULE ;;
-    PreferNoSchedule) echo PREFER_NO_SCHEDULE ;;
-    NoExecute)        echo NO_EXECUTE ;;
-    *)                rc::die "unknown taint effect: $1" ;;
-  esac
-}
-
-ensure_pool() {
-  local name="$1" machine="$2" nodes="$3" role="$4" effect="$5"
-  if gcloud container node-pools describe "${name}" \
-      --cluster="${RC_CLUSTER}" --location="${RC_LOCATION}" \
-      --project="${PROJECT_ID}" >/dev/null 2>&1; then
-    # Reconcile the taint rather than just reporting the pool present: a pool
-    # created by an older revision of this script carries that revision's
-    # taint, and the system pool's effect is the difference between an install
-    # that converges and one that deadlocks.
-    local have want
-    have="$(gcloud container node-pools describe "${name}" \
-      --cluster="${RC_CLUSTER}" --location="${RC_LOCATION}" --project="${PROJECT_ID}" \
-      --format="value(config.taints[0].effect)" 2>/dev/null || true)"
-    want="$(taint_enum "${effect}")"
-    if [[ "${have}" != "${want}" ]]; then
-      rc::step "node pool ${name} exists with taint effect ${have:-<none>}; updating to ${want}"
-      # --quiet because the update prompts to confirm replacing the pool's
-      # taints, and a provision run has to be unattended. Safe: the taints
-      # being replaced are the ones this same function wrote.
-      gcloud container node-pools update "${name}" --quiet \
-        --cluster="${RC_CLUSTER}" --location="${RC_LOCATION}" --project="${PROJECT_ID}" \
-        --node-taints="${RC_ROLE_KEY}=${role}:${effect}"
-    else
-      rc::step "node pool ${name} already exists"
-    fi
-    return
-  fi
-  rc::step "creating node pool ${name} (${nodes} x ${machine})"
-  gcloud container node-pools create "${name}" \
-    --cluster="${RC_CLUSTER}" \
-    --location="${RC_LOCATION}" \
-    --project="${PROJECT_ID}" \
-    --machine-type="${machine}" \
-    --num-nodes="${nodes}" \
-    --node-labels="${RC_ROLE_KEY}=${role}" \
-    --node-taints="${RC_ROLE_KEY}=${role}:${effect}"
-}
-
-ensure_pool "${RC_POOL_ROUTER}"  "${RC_MACHINE_TYPE}"        1                    "${RC_POOL_ROUTER}"  "${RC_TAINT_HARD}"
-ensure_pool "${RC_POOL_SYSTEM}"  "${RC_SYSTEM_MACHINE_TYPE}" 1                    "${RC_POOL_SYSTEM}"  "${RC_TAINT_SYSTEM}"
-ensure_pool "${RC_POOL_WORKERS}" "${RC_MACHINE_TYPE}"        "${RC_WORKER_NODES}" "${RC_POOL_WORKERS}" "${RC_TAINT_HARD}"
-ensure_pool "${RC_POOL_LOADGEN}" "${RC_MACHINE_TYPE}"        1                    "${RC_POOL_LOADGEN}" "${RC_TAINT_HARD}"
+# All four pools, router first so a zone shortage surfaces before the other
+# three have been paid for. pools.sh is shared with benchmarking/automation's
+# orchestrator, which asks the same script for the two-pool subset it needs on
+# a cluster it did not create.
+"${RC_DIR}/pools.sh" \
+  --pools "${RC_POOL_ROUTER},${RC_POOL_SYSTEM},${RC_POOL_WORKERS},${RC_POOL_LOADGEN}" \
+  --worker-nodes "${RC_WORKER_NODES}"
 
 rc::step "fetching credentials into ${RC_KUBECONFIG}"
 mkdir -p "$(dirname "${RC_KUBECONFIG}")"
@@ -276,33 +226,9 @@ rc::step "installing substrate (hack/install-ate.sh --deploy-ate-system)"
 NO_DEV_ENV=1 "${ROOT}/hack/install-ate.sh" --deploy-ate-system
 
 # --- placement ---------------------------------------------------------------
-#
-# Node pinning is what isolates the measurement: a CPU limit is CFS quota, not
-# core pinning, and does not partition run-queue delay, L3, memory bandwidth,
-# the NIC or conntrack — all per node. Giving the router a node to itself
-# partitions all of them at once.
 
-rc::step "pinning ate-system to its pools"
-rc::pin_workload deployment "${RC_ROUTER_NS}" atenet-router "${RC_POOL_ROUTER}"
-rc::pin_workload deployment "${RC_ROUTER_NS}" ate-api-server "${RC_POOL_SYSTEM}"
-rc::pin_workload deployment "${RC_ROUTER_NS}" ate-controller "${RC_POOL_SYSTEM}"
-rc::pin_workload deployment "${RC_ROUTER_NS}" dns "${RC_POOL_SYSTEM}"
-rc::pin_workload statefulset "${RC_ROUTER_NS}" valkey-cluster "${RC_POOL_SYSTEM}"
-rc::pin_workload deployment podcertificate-controller-system podcertificate-controller "${RC_POOL_SYSTEM}"
-
-# atelet is a DaemonSet and nothing under manifests/ate-install declares any
-# tolerations, so without this it gets no worker node and no actor ever
-# starts. It must run everywhere, so it tolerates all four taints.
-rc::step "letting atelet onto every tainted pool"
-rc::kubectl -n "${RC_ROUTER_NS}" patch daemonset atelet --type=strategic -p "$(cat <<EOF
-{"spec":{"template":{"spec":{"tolerations":[
-  {"key":"${RC_ROLE_KEY}","operator":"Equal","value":"${RC_POOL_ROUTER}","effect":"NoSchedule"},
-  {"key":"${RC_ROLE_KEY}","operator":"Equal","value":"${RC_POOL_SYSTEM}","effect":"NoSchedule"},
-  {"key":"${RC_ROLE_KEY}","operator":"Equal","value":"${RC_POOL_WORKERS}","effect":"NoSchedule"},
-  {"key":"${RC_ROLE_KEY}","operator":"Equal","value":"${RC_POOL_LOADGEN}","effect":"NoSchedule"}
-]}}}}
-EOF
-)" >/dev/null
+"${RC_DIR}/placement.sh" \
+  --pools "${RC_POOL_ROUTER},${RC_POOL_SYSTEM},${RC_POOL_WORKERS},${RC_POOL_LOADGEN}"
 
 # --- workloads ---------------------------------------------------------------
 
