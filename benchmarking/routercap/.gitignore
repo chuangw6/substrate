@@ -1,0 +1,11 @@
+# A run's output is data: stats.jsonl, one line per measurement window, plus
+# the summary.json regenerated from it. None of it is committed. The
+# orchestrator uploads both to the results bucket, and a local sweep is
+# thousands of lines that say nothing to a reader of this directory.
+runs/
+
+# profile.sh needs privileged node debug access that the shipped harness
+# should not imply is routine.
+profile.sh
+
+__pycache__/

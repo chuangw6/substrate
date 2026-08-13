@@ -253,11 +253,37 @@ spec:
         - name: "drain-signal"
           mountPath: "/var/run/atenet"
       - name: envoy
-        image: envoyproxy/envoy:v1.30-latest
+        # Kept in step with the go-control-plane/envoy version in go.mod: the
+        # xDS config atenet serves is generated against that API, and a data
+        # plane older than its control plane is the combination nobody tests.
+        #
+        # From 1.37 Envoy can also size its worker threads from the container's
+        # cgroup CPU limit instead of from the node's core count, which matters
+        # here: on a large node a CPU-limited router would otherwise run one
+        # event loop per node core and spend its quota being throttled.
+        image: envoyproxy/envoy:v1.37-latest
         command:
         - "/usr/local/bin/envoy"
         - "-c"
         - "/etc/envoy/envoy.yaml"
+        # Despite its name this is the switch for all container-aware sizing,
+        # not just cpusets: it is the only thing that makes Envoy compute the
+        # default concurrency as min(node threads, CPU affinity, cgroup CPU
+        # limit) rather than plain std::thread::hardware_concurrency(). Do not
+        # add --concurrency alongside it — an explicit value wins and pins the
+        # thread count to the node again.
+        #
+        # 1.37.0 announced the cgroup term as the new default, but shipped it
+        # reachable only from this flag; the gate is still there in 1.38 and
+        # 1.39. See envoyproxy/envoy#45410, fixed by #45729 (merged 2026-07-23,
+        # nine days after 1.39.0, so first released in 1.40). REMOVE THIS FLAG
+        # when we move to 1.40 or later: it becomes redundant there and Envoy
+        # logs a deprecation warning on every start.
+        #
+        # No CPU limit is declared below, so today all three terms of the min
+        # are the node's thread count and this changes nothing; it takes effect
+        # the moment someone gives the container a limit.
+        - "--cpuset-threads"
         - "--component-log-level"
         - "upstream:debug,router:debug,ext_proc:debug"
         # Prevents Envoy from fast-exiting on SIGTERM before atenet-router finishes
