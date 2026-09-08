@@ -1,0 +1,183 @@
+# Copyright 2026 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# OpenClaw density workload (see benchmarking/openclaw-density/README.md).
+# Deployed by benchmarking/openclaw-density/deploy.sh, which substitutes the
+# ${...} placeholders. The WorkerPool pins to a dedicated, tainted
+# n2-standard-64 node pool so nothing but this workload (and tolerate-all
+# DaemonSets) shares the measured node.
+
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: benchmark-openclaw
+
+---
+
+apiVersion: ate.dev/v1alpha1
+kind: WorkerPool
+metadata:
+  name: openclaw-density
+  namespace: benchmark-openclaw
+  labels:
+    workload: openclaw-density
+spec:
+  replicas: ${WORKER_COUNT}
+  sandboxClass: gvisor
+  sandboxConfigName: gvisor-default
+  workerImage: ko://github.com/agent-substrate/substrate/cmd/ateom-gvisor
+  template:
+    nodeSelector:
+      bench.substrate.dev/pool: openclaw-density
+    tolerations:
+    - key: bench.substrate.dev/pool
+      operator: Equal
+      value: openclaw-density
+      effect: NoSchedule
+    # Explicit requests make worker packing on the density node a stated
+    # input of the benchmark rather than a scheduler accident: the worker
+    # count X ~= allocatable memory / WORKER_MEMORY_REQUEST. Defaults
+    # match the capacity math model's per-pod reservations (0.25 vCPU /
+    # 2Gi); 2Gi is validated against measured per-worker working-set peaks
+    # of ~0.8-1.3Gi under full-herd load (runs 2-3, 2026-09-04).
+    resources:
+      requests:
+        cpu: ${WORKER_CPU_REQUEST}
+        memory: ${WORKER_MEMORY_REQUEST}
+
+---
+
+apiVersion: ate.dev/v1alpha1
+kind: ActorTemplate
+metadata:
+  name: openclaw
+  namespace: benchmark-openclaw
+spec:
+  sandboxClass: gvisor
+  containers:
+  - name: openclaw
+    # Must be digest-pinned; deploy.sh resolves the tag once and substitutes.
+    image: ${OPENCLAW_IMAGE}
+    # ActorTemplate has no ConfigMap/file volume source, so the config
+    # arrives as env vars and a shell wrapper writes it before exec-ing the
+    # gateway. ${OPENCLAW_ENTRYPOINT} is a deploy.sh knob because the
+    # image's binary path is pinned down by the boot smoke test, not here.
+    command: ["/bin/sh", "-c"]
+    args:
+    # The image runs as user `node` (verified via docker inspect); HOME may
+    # be absent from the merged env, so default it to node's home.
+    - |
+      HOME="${HOME:-/home/node}"; export HOME
+      mkdir -p "$HOME/.openclaw/workspace" &&
+      printf '%s' "$OPENCLAW_CONFIG_JSON" > "$HOME/.openclaw/openclaw.json" &&
+      printf '%s' "$OPENCLAW_ACTORS_MD" > "$HOME/.openclaw/workspace/ACTORS.md" &&
+      exec ${OPENCLAW_ENTRYPOINT}
+    env:
+    # The openclaw gateway config, moved to port 80 bound non-loopback
+    # ("lan" — the valid bind modes are loopback/lan/tailnet/auto/custom):
+    # 80 is the only inbound port nftables forwards from the worker pod
+    # into the actor sandbox (see cmd/ateom-gvisor/main.go), and the readyz
+    # probe below must reach it. The model is never dialed — idle actors
+    # receive no messages — so no API key is configured; the gateway
+    # generates its own auth token at boot (verified locally: it reaches
+    # "ready" in ~4s with this exact config and no credentials).
+    - name: OPENCLAW_CONFIG_JSON
+      value: |
+        {
+          "gateway": {
+            "mode": "local",
+            "bind": "lan",
+            "port": 80,
+            "auth": { "mode": "token" },
+            "controlUi": { "enabled": false }
+          },
+          "actors": {
+            "defaults": {
+              "workspace": "~/.openclaw/workspace",
+              "model": { "primary": "google/gemini-3-flash-preview" }
+            },
+            "list": [
+              {
+                "id": "default",
+                "name": "OpenClaw Assistant",
+                "workspace": "~/.openclaw/workspace"
+              }
+            ]
+          },
+          "cron": { "enabled": false }
+        }
+    - name: OPENCLAW_ACTORS_MD
+      value: |
+        # OpenClaw Assistant
+
+        You are a helpful AI assistant running in Kubernetes.
+    # Hold ResumeActor open until the gateway actually serves; resume
+    # latency measured at ateapi is then time-to-serving. /healthz answers
+    # 200 without credentials under token auth (verified locally; /health,
+    # /ready and /readyz do too). Still a deploy.sh knob for image bumps.
+    readyz:
+      httpGet:
+        path: ${OPENCLAW_READYZ_PATH}
+        port: 80
+      # As long as a full-fidelity cycle on purpose. A readyz timeout
+      # kills the restore mid-flight and (as of this writing) leaves the
+      # actor RESUMING with its worker worker pinned until the worker pod
+      # is bounced — under a full-herd CPU crush that cascades into pool
+      # collapse. Never abandoning a restore keeps workers cycling; slow
+      # wakes are still failed honestly by the locust cycle bound.
+      timeoutSeconds: 1800
+  resources:
+    limits:
+      memory: ${ACTOR_MEMORY}
+  workerSelector:
+    matchLabels:
+      workload: openclaw-density
+  snapshotsConfig:
+    location: gs://${BUCKET_NAME}/benchmark-openclaw/openclaw/
+
+---
+
+# Read access for the test's node/pod watcher (tests/openclaw_cycle.py),
+# which samples the density node's CPU/memory and the worker pods' restart
+# counts. Bound to both runner identities: the headless Job's SA and the
+# interactive locust Deployment's default SA.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: openclaw-density-watcher
+rules:
+- apiGroups: [""]
+  resources: ["nodes", "pods", "events"]
+  verbs: ["get", "list"]
+- apiGroups: ["metrics.k8s.io"]
+  resources: ["nodes", "pods"]
+  verbs: ["get", "list"]
+
+---
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: openclaw-density-watcher
+subjects:
+- kind: ServiceAccount
+  name: benchmark-runner
+  namespace: benchmarking
+- kind: ServiceAccount
+  name: default
+  namespace: benchmarking
+roleRef:
+  kind: ClusterRole
+  name: openclaw-density-watcher
+  apiGroup: rbac.authorization.k8s.io

@@ -43,8 +43,22 @@
 #                  outrun the default.
 #   ateArgs        Optional. List of strings appended verbatim to
 #                  `hack/install-ate.sh --deploy-ate-system` when this
-#                  test's substrate is deployed (e.g. ["--atenet-router=agentgateway"]
+#                  test's substrate is deployed (e.g. ["--atenet-router=actorgateway"]
 #                  or ["--experimental-use-sdsmint"]).
+#   workloadScript Optional (default benchmarking/workloads/deploy.sh).
+#                  Alternate workload deploy script for this test. It must
+#                  accept the same flag surface as the default script
+#                  (--deploy/--delete/--worker-count/--sandbox-class/
+#                  --actor-memory/--wait-timeout); the orchestrator calls
+#                  it for this test's deploy and both teardown sweeps.
+#   workloadNamespace
+#                  Optional (default benchmark-workloads). Namespace the
+#                  orchestrator waits in for ActorTemplates to be Ready
+#                  after the workload deploy; set it when workloadScript
+#                  deploys into its own namespace.
+#   workloadArgs   Optional. List of strings appended verbatim to the
+#                  workloadScript deploy call (e.g. ["--openclaw-image",
+#                  "ghcr.io/...@sha256:..."]).
 #
 # ---- type: locust -----------------------------------------------------------
 #
@@ -438,3 +452,41 @@ tests:
     nighthawk-ingress:
       envoyCpu: 16
       tailLatencySloMs: 25
+  # OpenClaw actor density on one dedicated n2-standard-64 node: p=0.25
+  # herd cycles at 2X/3X/4X actors (see benchmarking/openclaw-density/
+  # README.md for the methodology and how to read the results). Commented
+  # out until the target cluster carries its prerequisites, which the
+  # orchestrator does not provision:
+  #   1. The tainted n2-standard-64 node pool (README, "Node pool").
+  #   2. A digest-pinned OpenClaw image in workloadArgs below (the CRD
+  #      rejects tag-only refs; resolve with
+  #      `docker buildx imagetools inspect ghcr.io/openclaw/openclaw:2026.5.7`).
+  # duration is the orchestrator's job-wait budget; the shape ends the run
+  # itself. Each band (smallest first) runs in a clean state: a pause
+  # between bands warms the new actors and waits until every actor is
+  # suspended before the next band's clock starts, so bands never see each
+  # other's traffic. At 176 workers the 2x/3x/4x ladder is ~2h; with
+  # --bisect true expect ~2 extra probe bands (~40m each). users must be
+  # >= the largest --points entry.
+  # - name: openclaw_density_p25
+  #   description: "OpenClaw density: p=0.25 herd wake cycles, clean bands at 2x/3x/4x workers with knee bisection"
+  #   type: locust
+  #   targetCluster: dev
+  #   file: /app/tests/openclaw_cycle.py,/app/shapes/openclaw_density.py
+  #   duration: 240m
+  #   users: 704
+  #   workerCount: 176
+  #   actorMemory: "1536Mi"   # idle openclaw ~765Mi RSS; 1Gi is too tight
+  #   workerWaitTimeout: "900s"
+  #   workloadScript: benchmarking/openclaw-density/deploy.sh
+  #   workloadNamespace: benchmark-openclaw
+  #   workloadArgs:
+  #     - "--openclaw-image"
+  #     - "ghcr.io/openclaw/openclaw@sha256:<pin-me>"
+  #   flags:
+  #     - "--workers"
+  #     - "176"
+  #     - "--points"
+  #     - "2x,3x,4x"
+  #     - "--bisect"
+  #     - "true"

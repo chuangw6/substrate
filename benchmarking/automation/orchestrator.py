@@ -327,27 +327,39 @@ def teardown_microvm_deps() -> None:
     run_no_check(["hack/install-microvm-deps.sh", "--delete"])
 
 
+# Every workload deploy script accepts this flag surface; a test that sets
+# `workloadScript` supplies a script with the same contract (see
+# benchmarking/openclaw-density/deploy.sh) plus any `workloadArgs` it needs.
+DEFAULT_WORKLOAD_SCRIPT = "benchmarking/workloads/deploy.sh"
+DEFAULT_WORKLOAD_NAMESPACE = "benchmark-workloads"
+
+
 def deploy_workloads(
     worker_count: int = 1,
     sandbox_class: str = "gvisor",
     actor_memory: str = "",
     wait_timeout: str = "",
+    script: str = DEFAULT_WORKLOAD_SCRIPT,
+    namespace: str = DEFAULT_WORKLOAD_NAMESPACE,
+    extra_args: Iterable[str] = (),
 ) -> None:
     cmd = [
-        "benchmarking/workloads/deploy.sh",
+        script,
         "--deploy",
         "--worker-count",
         str(worker_count),
         "--sandbox-class",
         sandbox_class,
     ]
-    # Empty keeps the default in workloads/deploy.sh (256Mi, the microvm
+    # Empty keeps the default in the deploy script (256Mi, the microvm
     # minimum); RAM-consuming suites set actorMemory in tests.yaml.
     if actor_memory:
         cmd += ["--actor-memory", actor_memory]
-    # Empty keeps deploy.sh's own default; large fleets set workerWaitTimeout.
+    # Empty keeps the deploy script's own default; large fleets set
+    # workerWaitTimeout.
     if wait_timeout:
         cmd += ["--wait-timeout", wait_timeout]
+    cmd += [str(a) for a in extra_args]
     run(cmd)
     # Block until ActorTemplates are Ready
     run(
@@ -358,14 +370,14 @@ def deploy_workloads(
             "--all",
             "actortemplates",
             "-n",
-            "benchmark-workloads",
+            namespace,
             "--timeout=300s",
         ]
     )
 
 
-def teardown_workloads() -> None:
-    run_no_check(["benchmarking/workloads/deploy.sh", "--delete"])
+def teardown_workloads(script: str = DEFAULT_WORKLOAD_SCRIPT) -> None:
+    run_no_check([script, "--delete"])
 
 
 def run_test(
@@ -508,6 +520,8 @@ def main() -> None:
             if ttype not in images:
                 images[ttype] = TYPES[ttype].build_image(commit)
 
+            workload_script = test.get("workloadScript", DEFAULT_WORKLOAD_SCRIPT)
+
             # Idempotent sweep before anything else: a previous CronJob
             # fire that crashed mid-test (or any other process that left
             # state behind) would otherwise leak its substrate + workloads
@@ -516,6 +530,8 @@ def main() -> None:
             # microvm-deps deletes a SandboxConfig CR, which requires the
             # SandboxConfig CRD that teardown_substrate removes.
             teardown_workloads()
+            if workload_script != DEFAULT_WORKLOAD_SCRIPT:
+                teardown_workloads(workload_script)
             teardown_microvm_deps()
             teardown_substrate()
 
@@ -535,6 +551,11 @@ def main() -> None:
                     sandbox_class,
                     test.get("actorMemory", ""),
                     test.get("workerWaitTimeout", ""),
+                    script=workload_script,
+                    namespace=test.get(
+                        "workloadNamespace", DEFAULT_WORKLOAD_NAMESPACE
+                    ),
+                    extra_args=test.get("workloadArgs", []),
                 )
                 try:
                     status = run_test(
@@ -558,6 +579,8 @@ def main() -> None:
                 # microvm-deps must go before substrate for the same reason
                 # as above.
                 teardown_workloads()
+                if workload_script != DEFAULT_WORKLOAD_SCRIPT:
+                    teardown_workloads(workload_script)
                 teardown_microvm_deps()
                 teardown_substrate()
             duration = time.time() - start_time
