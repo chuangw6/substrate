@@ -105,6 +105,7 @@ def parse_args() -> argparse.Namespace:
 PYTHON_TESTS = frozenset({
     "ate_api.py",
     "counter_demo.py",
+    "openclaw_cycle.py",
     "sleep.py",
     "usermem.py",
     "kernelmem.py",
@@ -403,6 +404,12 @@ def main() -> None:
 
     work_dir = Path(f"/tmp/{path_ts}-locust-runner")
     work_dir.mkdir(parents=True, exist_ok=True)
+    # Tests that produce artifacts beyond locust's stats (summaries, node
+    # telemetry) write them here; everything in it is uploaded after the
+    # run. The path travels by env var because locust runs as a subprocess.
+    extra_dir = work_dir / "extra"
+    extra_dir.mkdir(parents=True, exist_ok=True)
+    os.environ["BENCHMARK_EXTRA_DIR"] = str(extra_dir)
     csv_prefix = work_dir / args.name
     stats_csv = work_dir / f"{args.name}_stats.csv"
     jsonl_path = work_dir / f"{args.name}.jsonl"
@@ -461,6 +468,10 @@ def main() -> None:
         (work_dir / f"{args.name}_stats_history.csv", "stats_history.csv"),
         # TODO: remove after data migration
         (jsonl_path, f"{args.name}.jsonl"),
+    ]
+    files += [
+        (extra, extra.name) for extra in sorted(extra_dir.iterdir())
+        if extra.is_file()
     ]
     for src, basename in files:
         if not src.exists():

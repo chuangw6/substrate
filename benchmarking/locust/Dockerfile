@@ -24,7 +24,7 @@ RUN pip install --no-cache-dir --target=/app/deps -r requirements.txt
 # Stage 2: Go build of the boomer-glutton worker. Lives in the same image so
 # runner.py can spawn it as a subprocess during headless runs of glutton.
 # CGO_ENABLED=0 keeps us on boomer's pure-Go ZMQ (gomq), no libzmq needed.
-FROM golang:1.26-bookworm AS goboomer
+FROM golang:1.27-bookworm AS goboomer
 WORKDIR /src
 COPY go.mod go.sum ./
 COPY vendor ./vendor

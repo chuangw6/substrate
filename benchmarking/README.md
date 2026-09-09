@@ -109,6 +109,16 @@ and state restoration latency when a durable directory is attached to the actor.
 * `DurDirServeWarm`: Subsequent read within the same active cycle (cached state baseline).
 * `DurDirOverwrite`: In-place file overwrite with checksum verification.
 
+### OpenClaw Density Benchmark
+
+Measures how many OpenClaw actors a dedicated set of workers can host
+with suspend/resume under the capacity model's traffic: a 30-minute
+cycle with a 25% herd resuming at the same second and the rest spread
+over the cycle. Sizes run smallest first from a clean pool, then a binary
+search pins the knee. Needs a tainted node pool, a raised Postgres
+connection limit, and a digest-pinned OpenClaw image; see
+[openclaw-density/README.md](openclaw-density/README.md).
+
 ### Viewing Traces
 You must have enabled otel tracing for your cluster to view traces.
 
