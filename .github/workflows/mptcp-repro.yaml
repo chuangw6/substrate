@@ -1,0 +1,21 @@
+name: mptcp-repro
+on:
+  push:
+    branches: [mptcp-repro]
+jobs:
+  repro:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v5
+    - uses: actions/setup-go@v6
+      with:
+        go-version-file: go.mod
+    - run: |
+        uname -r
+        sysctl net.mptcp.enabled || true
+        go version
+        cd hack/mptcp-repro
+        go build -o repro .
+        echo "== default"; ./repro
+        echo "== GODEBUG=multipathtcp=0"; GODEBUG=multipathtcp=0 ./repro
+        echo "== lc.SetMultipathTCP(false)"; ./repro setmptcp-false
